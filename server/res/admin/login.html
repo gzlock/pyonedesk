@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登录PyOneDrive管理后台</title>
+    <!-- 引入样式 -->
+    <link href="https://cdn.bootcss.com/element-ui/2.9.2/theme-chalk/index.css" rel="stylesheet">
+    <!-- 引入组件库 -->
+    <script src="https://cdn.bootcss.com/axios/0.19.0/axios.min.js"></script>
+    <script src="https://cdn.bootcss.com/vue/2.6.10/vue.min.js"></script>
+    <script src="https://cdn.bootcss.com/element-ui/2.9.2/index.js"></script>
+    <style>
+        html, body, #app {
+            height: 100vh;
+        }
+
+        .bg-purple-dark {
+            background: #99a9bf;
+        }
+
+        #app {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .box-card {
+            width: 400px;
+        }
+    </style>
+</head>
+<body class="bg-purple-dark">
+<div id="app">
+    <!--<el-card class="box-card" shadow="hover">
+        <div slot="header" class="clearfix">
+            <span>登录PyOneDrive管理后台</span>
+            <el-button style="float: right; padding: 3px 0" type="text">开源项目</el-button>
+        </div>
+        <el-form>
+            <el-form-item label="密码">
+                <el-input v-model="password"/>
+            </el-form-item>
+        </el-form>
+    </el-card>-->
+
+    <el-dialog title="登录PyOneDrive管理后台" visible :show-close="false" :close-on-click-modal="false"
+               :close-on-press-escape="false">
+        <el-form>
+            <el-form-item label="密码">
+                <el-input v-model="password"/>
+            </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+            <el-button type="primary" @click="login">登 录</el-button>
+        </span>
+    </el-dialog>
+</div>
+<script>
+  new Vue({
+    el: '#app',
+    data: {password: ''},
+    methods: {
+      login() {
+        axios.post('/admin/login', {
+          password: this.password
+        }).then(function (response) {
+          console.log(response);
+        }).catch(function (error) {
+          console.log(error);
+        });
+      },
+    },
+    mounted() {
+
+    },
+  })
+</script>
+</body>
+</html>

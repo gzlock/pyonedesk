@@ -1,0 +1,6 @@
+/cache/
+/idea/
+__pycache__
+*.iml
+*.idea
+开发信息.txt
