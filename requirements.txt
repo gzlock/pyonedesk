@@ -1,3 +1,7 @@
+Crypto
+click
+requests
 sanic
 diskcache
 progress
+pycrypto
