@@ -3,21 +3,25 @@
 import json
 import os
 import random
-import requests
 
-from sanic import Blueprint, response
-
-from .utils import sha256, aesDecrypt, aesEncrypt
 from diskcache import Cache
+from sanic import Blueprint, response
+from sanic.exceptions import Forbidden, NotFound, ServerError
+from shortuuid import ShortUUID
 
-admin = Blueprint('admin')
-adminLogin = Blueprint('login')
+from .account import Account
+from .utils import sha256, aesDecrypt, aesEncrypt, createAppUrl, getCodeUrl
+
+admin = Blueprint('admin', url_prefix='/admin')
+admin_api = Blueprint('admin_api', url_prefix='/admin/api')
 
 prefix = '/admin'
 
-res_dir = os.path.join(os.path.dirname(__file__), 'res', 'admin')
+res_dir = os.path.join(os.path.dirname(__file__), 'res')
 
 __iv = 'This is an IV456'
+
+uuid = ShortUUID()
 
 
 def __checkToken(request) -> bool:
@@ -30,16 +34,34 @@ def __checkToken(request) -> bool:
     return token['password'] == config['password']
 
 
-@adminLogin.route(prefix + '/login', methods=['GET'])
-async def loginPage(request):
+@admin.route('/login')
+async def admin_login_page(request):
+    """
+    登录页面
+    :param request:
+    :return:
+    """
     if __checkToken(request):
-        return response.redirect(prefix)
+        return response.redirect(admin.url_prefix)
 
-    return await response.file(os.path.join(res_dir, 'login.html'))
+    return await response.file(os.path.join(res_dir, 'admin_login.html'))
 
 
-@adminLogin.route(prefix + '/login', methods=['POST'])
-async def loginAction(request):
+@admin.route('/')
+async def admin_index_page(request):
+    """后台首页"""
+    if __checkToken(request):
+        return await response.file(os.path.join(res_dir, 'admin.html'))
+    return response.redirect(admin.url_prefix + '/login')
+
+
+@admin.route('/login', methods=['POST'])
+async def login_action(request):
+    """
+    ajax 登录
+    :param request:
+    :return:
+    """
     code = {'code': 0}
     if __checkToken(request):
         code['code'] = 1
@@ -61,68 +83,175 @@ async def loginAction(request):
     return data
 
 
-# 检查所有/admin的网络请求是否有token
 @admin.middleware('request')
-async def checkToken(request):
-    # print('admin 中间件')
-    path = request.path
-    method = request.method.lower()
-
-    if path == prefix + '/login':
+async def check_token(request):
+    path: str = request.path
+    method: str = request.method.lower()
+    if path == admin.url_prefix + '/login':
         pass
-    else:
+    elif path == '/admin' or path.startswith(admin_api.url_prefix):
         if __checkToken(request) is False:
-            res = response.redirect(prefix + '/login')
-            del res.cookies['token']
-            return res
+            raise Forbidden('请登录')
 
 
-@admin.route(prefix)
-async def index(request):
-    accounts: dict = request.app.cache.get('accounts', default=[])
-    create_app_url = ''
-    code_url = ''
-    with open(os.path.join(res_dir, 'index.html'), 'r') as file:
-        html = file.read() \
-            .replace('{accounts}', json.dumps(accounts)) \
-            .replace('{create_app_url}', create_app_url) \
-            .replace('{code_url}', code_url)
+@admin_api.route('/accounts')
+async def get_accounts_list(request):
+    """
+    获取账号列表
+    :param request:
+    :return:
+    """
+    res = {}
+    accounts = Account.get_accounts()
+    default_id = request.app.cache.get('default_account_id')
+    for account in accounts.values():
+        res[account.id] = account.to_json()
+        if account.id == default_id:
+            res[account.id]['default'] = True
+    return response.json(res)
+
+
+@admin_api.route('/account/<id:string>')
+async def get_account(request, id: str):
+    """
+    获取指定账号的信息
+    :param request:
+    :param id:
+    :return:
+    """
+    account = Account.get_by_id(id)
+    if account is None:
+        raise NotFound('找不到对应的账号')
+
+    default_id = request.app.cache.get('default_account_id')
+
+    json = account.to_json()
+    json['quota'] = account.get_quota()
+    json['default'] = default_id == id
+
+    return response.json(json)
+
+
+@admin_api.route('/account/<id:string>', methods=['POST'])
+async def save_account(request, id: str):
+    cache: Cache = request.app.cache
+    account = Account.get_by_id(id)
+    if account is None:
+        raise NotFound()
+    if 'default' in request.json:
+        print('默认账号', request.json['default'])
+        if request.json['default']:
+            cache.set('default_account_id', id)
+        else:
+            cache.delete('default_account_id')
+    account.save()
+    return response.json({'code': 1})
+
+
+@admin_api.route('/accounts/delete/<id:string>')
+async def delete_account(request, id: str):
+    """
+    删除账号
+    :param request:
+    :param id
+    :return:
+    """
+    if Account.delete_by_id(id):
+        return response.json({'code': 1})
+    raise NotFound()
+
+
+@admin_api.route('/account/create_id')
+async def creat_account_id(request):
+    accounts = Account.get_accounts()
+    id: str
+    while True:
+        id = uuid.random(length=5)
+        if id not in accounts:
+            break
+    return response.json({'id': id})
+
+
+@admin_api.route('/accounts/add', methods=['POST'])
+async def add_account(request):
+    """
+    添加OneDrive账号
+    :param request:
+    :return:
+    """
+    id = request.json['id']
+
+    if len(id) != 5:
+        raise ServerError('ID格式不符合规则')
+
+    accounts = Account.get_accounts()
+
+    if id in accounts:
+        raise ServerError('已经相同ID的账号了')
+
+    name = request.json['name']
+
+    for account in accounts.values():
+        if account.name == name:
+            raise ServerError('已经相同别名的账号了')
+
+    client_id = request.json['client_id']
+    client_secret = request.json['client_secret']
+    url = Account.create_redirect_url(scheme=request.scheme, host=request.host, id=id)
+
+    account = Account(id=id, name=name, client_id=client_id,
+        client_secret=client_secret, url=url)
+    account.save()
+    return response.json(account.to_json())
+
+
+@admin_api.route('/code/<id:string>')
+async def get_code(request, id: str):
+    """
+    从微软的跳转接收Code
+    :param request:
+    :param id:
+    :return:
+    """
+    account = Account.get_by_id(id)
+
+    if account is None or 'code' not in request.raw_args:
+        return response.html('<h1>小伙子不要自己打开这个页面哟</h1>')
+
+    code = request.raw_args['code']
+    print('接收Code', account.name, code)
+    state = int(account.request_token_by_code(code))
+    with open(os.path.join(res_dir, 'admin_get_code.html'), 'r') as file:
+        html = file.read().replace('{data}', json.dumps(
+            {'account': account.to_json(), 'state': state, 'code': code}))
         return response.html(html)
 
 
-@admin.route(prefix + '/accounts')
-async def getAccounts(request):
-    accounts: dict = request.app.cache.get('accounts', default=[])
-    return response.json(accounts)
+@admin_api.route('/go_create_app/<id:string>/<name:string>')
+async def redirect_to_create_app_url(request, id: str, name: str):
+    """
+    跳转到创建微软开发应用的网址，只需要用到 别名
+    :param request:
+    :param id:
+    :param name:
+    :return:
+    """
+    url = Account.create_redirect_url(scheme=request.scheme, host=request.host,
+        id=id)
+    go_url = createAppUrl(name=name, url=url)
+    #  print(url, go_url)
+    return response.redirect(go_url)
 
 
-@admin.route(prefix + '/accounts/add', methods=['POST'])
-async def addAccount(request):
-    cache: Cache = request.app.cache
-    name = request.json['name']
-    client_id = request.json['client_id']
-    client_secret = request.json['client_secret']
-    code = request.json['code']
-
-    redirect_uri = '{scheme}://{host}/admin/get_code'.format(scheme=request.scheme, host=request.hot)
-    data = 'client_id={client_id}&redirect_uri={redirect_uri}&client_secret={client_secret}&code={code}&grant_type=authorization_code'.format(
-        client_id=client_id, client_secret=client_secret, code=code, redirect_uri=redirect_uri)
-
-    url = 'https://login.microsoftonline.com/common/oauth2/v2.0/token'
-    res = requests.post(url, data=data, headers={'Content-Type': 'application/x-www-form-urlencoded'})
-    print('验证code', res.json())
-    accounts: list = cache.get('accounts', default=[])
-    accounts.append({'name': name, 'client_id': client_id, 'client_secret': client_secret, 'token': res.json()})
-    cache.set('accounts', accounts)
-    return response.json({code: 1})
-
-
-@admin.route(prefix + '/account/test', methods=['POST'])
-async def testAccount(request):
-    name = request.json['name']
-    client_id = request.json['client_id']
-    redirect_uri = '{scheme}://{host}/admin/get_code'.format(scheme=request.scheme, host=request.hot)
-    scope = 'offline_access files.readwrite'
-    url = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id={client_id}&scope={scope}&response_type=code&redirect_uri={redirect_uri}'.format(
-        client_id=client_id, scope=scope, redirect_uri=redirect_uri)
-    return response.json({'url': url})
+@admin_api.route('/go_get_code/<id:string>')
+async def redirect_to_get_code_url(request, id: str):
+    """
+    跳转到微软获取Code的网址
+    :param request:
+    :param id:
+    :return:
+    """
+    account = Account.get_by_id(id)
+    if account is None:
+        return response.html('<h1>找不到对应的账号</h1>')
+    return response.redirect(getCodeUrl(account=account))

@@ -1,7 +1,10 @@
-Crypto
+hurry.filesize
+pytest
 click
 requests
 sanic
 diskcache
 progress
 pycrypto
+shortuuid
+colorama
