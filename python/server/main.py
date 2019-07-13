@@ -6,7 +6,7 @@ from shortuuid import ShortUUID
 
 from python.server import loop_task
 from python.server.account import Account
-from python.server import sha256
+from python.server.utils import sha256
 from .admin import admin, admin_api
 from .index import index
 

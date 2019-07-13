@@ -6,7 +6,6 @@ const outputDir = path.join(__dirname, '..', 'python', 'server', 'res')
 console.log({ outputDir })
 
 module.exports = {
-  // publicPath: process.env.NODE_ENV === 'production' ? '/' : '/html',
   runtimeCompiler: true,
   outputDir,
   assetsDir: 'resources',

@@ -89,8 +89,10 @@ async def check_token(request):
     method: str = request.method.lower()
     if path == admin.url_prefix + '/login':
         pass
-    elif path == '/admin' or path.startswith(admin_api.url_prefix):
-        if __checkToken(request) is False:
+    elif __checkToken(request) is False:
+        if path == '/admin':
+            response.redirect(admin.url_prefix + '/login')
+        elif path.startswith(admin_api.url_prefix):
             raise Forbidden('请登录')
 
 

@@ -8,8 +8,10 @@ __pycache__/
 python/server/res/
 python/开发信息.txt
 python/upload_test*.zip
-python/pyonedrive.egg-info/
-python/build/
-python/dist/
+
+# pip包的数据
+pyonedrive.egg-info/
+build/
+dist/
 
 webpack/node_modules/

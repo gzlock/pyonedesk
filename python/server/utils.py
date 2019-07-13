@@ -12,10 +12,6 @@ def sha256(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
 
-def md5(text: str) -> bytes:
-    return hashlib.md5(text.encode()).digest()
-
-
 def multiple16(text: str, fill: str = ' ') -> str:
     length = len(text)
     length = length - length % 16 + 16

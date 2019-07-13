@@ -10,3 +10,4 @@ shortuuid
 colorama
 setuptools
 wheel
+appdirs

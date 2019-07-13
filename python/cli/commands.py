@@ -9,7 +9,7 @@ from hurry.filesize import size
 from requests import Response
 
 from python.server.account import Account
-from python.cli.utils import read_in_chunks
+from python.utils import read_in_chunks
 
 
 @click.group()

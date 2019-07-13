@@ -12,7 +12,7 @@
 - python 3.7
     - click
     - diskcache
-    - 更多库请看[requirements.txt](python/requirements.txt)
+    - 更多库请看[requirements.txt](requirements.txt)
 - vue
     - vue-cli
     - element-ui 
@@ -24,28 +24,31 @@
     - port 端口
     - password 管理后台的登录密码，**sha256加密后存放**    
 - 命令行 所有命令：
-    - 命令行不提供添加OneDrive账号功能，因为使用网页方式添加更加方便
-    - 假设有 A 和 B 两个账号，没有设置默认账号
+    - 列出一些信息
+        - `pyonedrive info`
+        - 关于一些pyonedrive的运作数据，例如存储数据的目录和这个目录的容量信息等等
     - 本地账号的相关操作
+        - 命令行不提供添加OneDrive账号功能，因为使用网页方式添加更加方便
+        - 假设有 A 和 B 两个账号，没有设置默认账号
         - 列出所有账号的别名
-            - `python3 main.py cli accounts`
+            - `pyondrive cli accounts`
             - 输出[ A, B ]
-        - 将别名为A的账号设置为默认账号 `python3 main.py cli --select A default`
+        - 将别名为A的账号设置为默认账号 `pyonedrive cli --select A default`
         - [什么是默认账号？](#默认账号)
         - 再次列出所有账号
-            - `python3 main.py cli accounts`
+            - `pyonedrive cli accounts`
             - 输出[ *A, B ]
             - 带星号的是默认账号
         - 删除账号
-            - `python3 main.py cli --select A`
+            - `pyonedrive cli --select A`
             - 确认删除后就删了
     - OneDrive文件级操作
         - 将默认账号的目录定位到/ABC目录，*会影响相同账号的后续命令
-            - `python3 main.py cli cd /ABC`
+            - `pyonedrive cli cd /ABC`
         - 将B账号的目录定位到/ABC目录，*会影响相同账号的后续命令
-            - `python3 main.py cli cd /ABC`
+            - `pyonedrive cli cd /ABC`
         - 列出 /ABC 目录的所有内容 *受 cd 命令影响
-            - `python3 main.py cli ls` 
+            - `pyonedrive cli ls` 
     - `python3 main.py cli upload ./文本.txt` 将本地文件【文本.txt】上传到默认账号的 /ABC 目录，受 cd 命令影响
     - `python3 main.py cli upload ./文本.txt /` 将本地文件【文本.txt】上传到默认账号的 / 根目录，忽略 cd命令的影响
     - 有没有默认账号的区别：以下的命令可以少写一个账号别名参数 --select  / -s 
