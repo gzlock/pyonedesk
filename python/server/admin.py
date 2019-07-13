@@ -138,12 +138,23 @@ async def save_account(request, id: str):
     account = Account.get_by_id(id)
     if account is None:
         raise NotFound()
-    if 'default' in request.json:
+    data = request.json
+    if 'default' in data and type(data['default']) is bool:
         print('默认账号', request.json['default'])
         if request.json['default']:
             cache.set('default_account_id', id)
         else:
             cache.delete('default_account_id')
+    if 'name' in data and type(data['name'] is str):
+        name = data['name']
+        if len(name) < 3:
+            raise ServerError('账号别名长度需要超过2个字')
+        accounts = Account.get_accounts().values()
+        for _account in accounts:
+            if _account.id != id and _account.name == name:
+                raise ServerError('有其它相同别名的账号')
+        account.name = name
+
     account.save()
     return response.json({'code': 1})
 

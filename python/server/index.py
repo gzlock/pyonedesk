@@ -2,7 +2,7 @@ import os
 
 from sanic import Blueprint, response
 
-from server.admin import get_accounts_list
+from python.server.admin import get_accounts_list
 
 res_dir = os.path.join(os.path.dirname(__file__), 'res')
 

@@ -1,7 +1,7 @@
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const path = require('path')
 
-const outputDir = path.join(__dirname, '..', 'server', 'res')
+const outputDir = path.join(__dirname, '..', 'python', 'server', 'res')
 
 console.log({ outputDir })
 

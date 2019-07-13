@@ -5,8 +5,8 @@ import pytest
 from click.testing import CliRunner
 from diskcache import Cache
 
-from cli import commands
-from server.account import Account
+from python.cli import commands
+from python.server.account import Account
 
 
 @click.group()
@@ -44,16 +44,19 @@ def test_set_default_account(runner):
     print('不输入别名 结果', result.output)
 
     # 设置不存在的别名 abc 为默认账号
-    result = runner.invoke(main, ['cli','--select=123' 'default'])
+    result = runner.invoke(main, ['cli', '--select=abc' 'default'])
     print('结果', result.output)
 
     # 设置已存在的别名 123 为默认账号
-    result = runner.invoke(main, ['cli', 'default'])
+    result = runner.invoke(main, ['cli', '-s=123', 'default'])
     print('结果', result.output)
 
 
 def test_cd_ls(runner):
-    print('cd 选择文件夹和 ls 列出文件夹内项目 测试')
+    # cd 选择文件夹 和 ls 列出文件夹内项目 测试
+    result = runner.invoke(main, ['cli', 'cd'])
+    print('cd无路径参数', result.output)
+
     result = runner.invoke(main, ['cli', 'cd', '/'])
     result = runner.invoke(main, ['cli', 'ls'])
     print('结果', result.output)

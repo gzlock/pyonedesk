@@ -4,9 +4,9 @@ import os
 from sanic import Sanic
 from shortuuid import ShortUUID
 
-from server import loop_task
-from server.account import Account
-from server.utils import sha256
+from python.server import loop_task
+from python.server.account import Account
+from python.server import sha256
 from .admin import admin, admin_api
 from .index import index
 

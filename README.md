@@ -12,7 +12,7 @@
 - python 3.7
     - click
     - diskcache
-    - 更多库请看[requirements.txt](./requirements.txt)
+    - 更多库请看[requirements.txt](python/requirements.txt)
 - vue
     - vue-cli
     - element-ui 

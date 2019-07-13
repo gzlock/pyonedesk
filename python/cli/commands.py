@@ -8,8 +8,8 @@ from diskcache import Cache
 from hurry.filesize import size
 from requests import Response
 
-from server.account import Account
-from utils import read_in_chunks
+from python.server.account import Account
+from python.cli.utils import read_in_chunks
 
 
 @click.group()

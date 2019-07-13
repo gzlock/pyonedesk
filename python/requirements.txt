@@ -8,3 +8,5 @@ progress
 pycrypto
 shortuuid
 colorama
+setuptools
+wheel
