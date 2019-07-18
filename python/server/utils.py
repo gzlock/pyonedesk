@@ -5,7 +5,7 @@ import hashlib
 
 from Crypto.Cipher import AES
 
-from python.server.account import Account
+from server.account import Account
 
 
 def sha256(text: str) -> str:

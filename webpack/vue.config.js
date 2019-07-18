@@ -10,7 +10,7 @@ module.exports = {
   outputDir,
   assetsDir: 'resources',
   pages: {
-    index: { entry: 'src/pages/index/main.js', title: '首页' },
+    index: { entry: 'src/pages/index/main.js', title: 'PyOneDrive' },
     admin: {
       entry: 'src/pages/admin/main.js',
       filename: 'admin.html',
@@ -28,17 +28,8 @@ module.exports = {
       template: 'public/admin_get_code.html',
     },
   },
+  productionSourceMap: false,
   devServer: {
-    /*proxy: {//配置跨域
-      '/admin': {
-        target: 'http://localhost:23333/admin/',//这里后台的地址模拟的;应该填写你们真实的后台接口
-        ws: true,
-        changOrigin: true,//允许跨域
-        pathRewrite: {
-          '^/admin': ''//请求的时候使用这个api就可以
-        }
-      }
-    }*/
     proxy: 'http://localhost:23333/',
   },
   css: {

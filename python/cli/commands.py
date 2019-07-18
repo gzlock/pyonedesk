@@ -8,8 +8,8 @@ from diskcache import Cache
 from hurry.filesize import size
 from requests import Response
 
-from python.server.account import Account
-from python.utils import read_in_chunks
+from server.account import Account
+from utils import read_in_chunks
 
 
 @click.group()
@@ -37,12 +37,12 @@ def cli(ctx: Context, select_account_name: str):
 @click.pass_obj
 def account_list(obj: dict):
     accounts = Account.get_accounts().values()
-    default_id = obj['default_account'].id
-    names = ['*' + account.name if account.id == default_id else account.name
-             for account in accounts]
-    if len(names) == 0:
+    if len(accounts) == 0:
         click.echo('账号列表为空')
     else:
+        default_id = obj['default_account'].id if obj['default_account'] else None
+        names = ['*' + account.name if account.id == default_id else account.name
+                 for account in accounts]
         click.echo('账号别名列表：[ {} ]\n有*的是默认账号'.format(', '.join(names)))
 
 

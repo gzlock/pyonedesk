@@ -27,7 +27,7 @@ class Account:
             'client_id': self.__client_id,
             'client_secret': self.__client_secret,
             'url': self.__url,
-            'has_token': self.has_token,
+            'has_token': self.has_token and self.has_refresh_token,
             'refresh_token': self.__refresh_token}
 
     @property
@@ -122,7 +122,7 @@ class Account:
             self.save()
             self.__save_token(token)
             return True
-
+        print('拿token失败', res.text)
         return False
 
     def __save_token(self, token: dict):
@@ -169,11 +169,16 @@ class Account:
 
     @property
     def token_key(self) -> str:
+        """在cache存放access_token的key"""
         return 'token-' + self.id
 
     @property
     def has_token(self) -> bool:
         return self.token_key in Account.cache
+
+    @property
+    def has_refresh_token(self):
+        return self.__refresh_token is not None
 
     @property
     def token(self) -> dict:
@@ -196,22 +201,25 @@ class Account:
         return self
 
     def get_item(self, path: str = None,
-                 url: str = 'https://graph.microsoft.com/v1.0/me/drive') -> dict:
+                 url: str = 'https://graph.microsoft.com/v1.0/me/drive') -> Optional[dict, bytes]:
         """
         获取OneDrive文件信息
         :return:
         """
-        if path is None:
+        if path is None or path == '/':
             url += '/root'
         else:
-            url += '/root{path}'.format(path=path)
+            url += '/root' + path
 
         print('get_item', url)
-        res = requests.get(url, headers=make_header(self.token['access_token']))
-        return res.json()
+        res = requests.get(url, headers=make_header(self.token.get('access_token')))
+        try:
+            return res.json()
+        except:
+            return res.content
 
     def get_quota(self, url: str = 'https://graph.microsoft.com/v1.0/me/drive'):
-        res = requests.get(url, headers=make_header(self.token['access_token']))
+        res = requests.get(url, headers=make_header(self.token.get('access_token')))
         # print('quota', res.json())
         return res.json()['quota']
 

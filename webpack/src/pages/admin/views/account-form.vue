@@ -92,6 +92,9 @@
         const res = await this.$store.dispatch('api', { url: API.account + '/' + this.id })
         if(res) {
           this.account = res.data
+          const accounts = this.$store.state.accounts
+          accounts[this.account.id] = this.account
+          this.$store.commit('setAccounts', accounts)
           this.loading = false
           this.activeName = this.account.has_token ? 'quota' : 'info'
 
@@ -129,11 +132,11 @@
         }
       },
       get_code_finish() {
-        this.account.has_token = true
+        console.log('code有效，重新读取')
+        this.load()
       },
     },
     async beforeMount() {
-      console.log('beforeMount')
       await this.load()
     },
   }

@@ -1,7 +1,5 @@
 <template>
-    <a :href="href" target="_blank">
-        <el-button>创建微软应用</el-button>
-    </a>
+    <el-button @click="open" :disabled="account.name.length === 0">创建微软应用</el-button>
 </template>
 
 <script>
@@ -12,6 +10,11 @@
     computed: {
       href() {
         return `${API.goCreateAppUrl}/${this.account.id}/${this.account.name}`
+      },
+    },
+    methods: {
+      open() {
+        window.open(this.href)
       },
     },
   }

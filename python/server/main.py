@@ -4,9 +4,9 @@ import os
 from sanic import Sanic
 from shortuuid import ShortUUID
 
-from python.server import loop_task
-from python.server.account import Account
-from python.server.utils import sha256
+from server import loop_task
+from server.account import Account
+from server.utils import sha256
 from .admin import admin, admin_api
 from .index import index
 
@@ -34,6 +34,9 @@ def server(obj, port: int, password: str):
     # 静态文件资源
     res_path = os.path.join(os.path.dirname(__file__), 'res', 'resources')
     app.static('/resources/', res_path)
+
+    favicon = os.path.join(os.path.dirname(__file__), 'res', 'favicon.ico')
+    app.static('/favicon.ico', favicon)
 
     loop_task.main(cache=cache)
 

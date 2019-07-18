@@ -9,7 +9,7 @@ from sanic import Blueprint, response
 from sanic.exceptions import Forbidden, NotFound, ServerError
 from shortuuid import ShortUUID
 
-from .account import Account
+from server.account import Account
 from .utils import sha256, aesDecrypt, aesEncrypt, createAppUrl, getCodeUrl
 
 admin = Blueprint('admin', url_prefix='/admin')
@@ -34,7 +34,7 @@ def __checkToken(request) -> bool:
     return token['password'] == config['password']
 
 
-@admin.route('/login')
+@admin.get('/login')
 async def admin_login_page(request):
     """
     登录页面
@@ -47,7 +47,7 @@ async def admin_login_page(request):
     return await response.file(os.path.join(res_dir, 'admin_login.html'))
 
 
-@admin.route('/')
+@admin.get('/')
 async def admin_index_page(request):
     """后台首页"""
     if __checkToken(request):
@@ -55,7 +55,7 @@ async def admin_index_page(request):
     return response.redirect(admin.url_prefix + '/login')
 
 
-@admin.route('/login', methods=['POST'])
+@admin.post('/login')
 async def login_action(request):
     """
     ajax 登录
@@ -86,17 +86,15 @@ async def login_action(request):
 @admin.middleware('request')
 async def check_token(request):
     path: str = request.path
-    method: str = request.method.lower()
-    if path == admin.url_prefix + '/login':
-        pass
-    elif __checkToken(request) is False:
+    # method: str = request.method.lower()
+    if __checkToken(request) is False:
         if path == '/admin':
             response.redirect(admin.url_prefix + '/login')
         elif path.startswith(admin_api.url_prefix):
             raise Forbidden('请登录')
 
 
-@admin_api.route('/accounts')
+@admin_api.get('/accounts')
 async def get_accounts_list(request):
     """
     获取账号列表
@@ -113,7 +111,7 @@ async def get_accounts_list(request):
     return response.json(res)
 
 
-@admin_api.route('/account/<id:string>')
+@admin_api.get('/account/<id:string>')
 async def get_account(request, id: str):
     """
     获取指定账号的信息
@@ -128,13 +126,16 @@ async def get_account(request, id: str):
     default_id = request.app.cache.get('default_account_id')
 
     json = account.to_json()
-    json['quota'] = account.get_quota()
+    if account.has_token:
+        json['quota'] = account.get_quota()
+    else:
+        json['quota'] = {}
     json['default'] = default_id == id
 
     return response.json(json)
 
 
-@admin_api.route('/account/<id:string>', methods=['POST'])
+@admin_api.post('/account/<id:string>')
 async def save_account(request, id: str):
     cache: Cache = request.app.cache
     account = Account.get_by_id(id)
@@ -161,7 +162,7 @@ async def save_account(request, id: str):
     return response.json({'code': 1})
 
 
-@admin_api.route('/accounts/delete/<id:string>')
+@admin_api.get('/accounts/delete/<id:string>')
 async def delete_account(request, id: str):
     """
     删除账号
@@ -174,7 +175,7 @@ async def delete_account(request, id: str):
     raise NotFound()
 
 
-@admin_api.route('/account/create_id')
+@admin_api.get('/account/create_id')
 async def creat_account_id(request):
     accounts = Account.get_accounts()
     id: str
@@ -185,7 +186,7 @@ async def creat_account_id(request):
     return response.json({'id': id})
 
 
-@admin_api.route('/accounts/add', methods=['POST'])
+@admin_api.post('/accounts/add')
 async def add_account(request):
     """
     添加OneDrive账号
@@ -218,7 +219,7 @@ async def add_account(request):
     return response.json(account.to_json())
 
 
-@admin_api.route('/code/<id:string>')
+@admin_api.get('/code/<id:string>')
 async def get_code(request, id: str):
     """
     从微软的跳转接收Code
@@ -227,20 +228,20 @@ async def get_code(request, id: str):
     :return:
     """
     account = Account.get_by_id(id)
+    code = request.raw_args.get('code')
 
-    if account is None or 'code' not in request.raw_args:
+    if account is None or code is None:
         return response.html('<h1>小伙子不要自己打开这个页面哟</h1>')
 
-    code = request.raw_args['code']
-    print('接收Code', account.name, code)
     state = int(account.request_token_by_code(code))
+    print('接收Code', account.name, code, state)
     with open(os.path.join(res_dir, 'admin_get_code.html'), 'r') as file:
-        html = file.read().replace('{data}', json.dumps(
+        html = file.read().replace("'{data}'", json.dumps(
             {'account': account.to_json(), 'state': state, 'code': code}))
         return response.html(html)
 
 
-@admin_api.route('/go_create_app/<id:string>/<name:string>')
+@admin_api.get('/go_create_app/<id:string>/<name:string>')
 async def redirect_to_create_app_url(request, id: str, name: str):
     """
     跳转到创建微软开发应用的网址，只需要用到 别名
@@ -256,7 +257,7 @@ async def redirect_to_create_app_url(request, id: str, name: str):
     return response.redirect(go_url)
 
 
-@admin_api.route('/go_get_code/<id:string>')
+@admin_api.get('/go_get_code/<id:string>')
 async def redirect_to_get_code_url(request, id: str):
     """
     跳转到微软获取Code的网址

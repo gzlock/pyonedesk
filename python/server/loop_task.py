@@ -3,16 +3,16 @@ from multiprocessing import Process
 
 from diskcache import Cache
 
-from python.server.account import Account
+from server.account import Account
 
 
 def worker(cache: Cache):
     Account.cache = cache
     while True:
         work = 0
-        accounts: dict = cache.get('accounts', default={})
-        for account in accounts.values():
-            if account.has_token:
+        accounts: [] = Account.get_accounts().values()
+        for account in accounts:
+            if account.has_refresh_token is False or account.has_token is True:
                 continue
             account.refresh_token()
             work += 1

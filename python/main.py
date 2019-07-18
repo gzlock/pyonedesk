@@ -8,11 +8,12 @@ import click
 from diskcache import Cache
 from hurry.filesize import size
 
-from python.cli import commands
-from python.config import config as default_config
-from python.server.account import Account
-from python.server.main import server
-from python.utils import get_tree_size, md5
+from cli import commands
+from config import config as default_config
+from server.account import Account
+from server.main import server
+from utils import md5, get_tree_size
+
 
 appName = 'PyOneDrive'
 
@@ -53,17 +54,17 @@ def cli(ctx, debug: bool):
 @click.pass_obj
 def create_server(obj, port: int, password: str):
     cache = obj['cache']
-    config = cache.get('config', default=None)
+    _config = cache.get('config', default=None)
 
     if obj['debug'] == 1:
         print('启用开发环境')
-        config = None
+        _config = None
 
-    if config is None:
+    if _config is None:
         config = copy.deepcopy(default_config)
         config['aes_key'] = md5(config['aes_key'])
     else:
-        config = {**default_config, **config}
+        config = {**default_config, **_config}
 
     obj['config'] = config
 
@@ -74,6 +75,7 @@ def create_server(obj, port: int, password: str):
 def show_info():
     info = '数据目录:\t' + data_dir
     info += '\n数据容量:\t' + size(get_tree_size(data_dir))
+    info += '\n账号数量:\t' + str(len(Account.get_accounts().keys()))
     click.echo(info)
 
 

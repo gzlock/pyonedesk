@@ -21,7 +21,13 @@
   export default {
     data() {
       // 关于 data 数据，请查看 server/admin.py get_code 函数
-      return { ...window.data, countdown, autoClose: false } // eslint-disable-line
+      return {
+        account: window.data.account,
+        state: window.data.state,
+        code: window.data.code,
+        countdown,
+        autoClose: false,
+      } // eslint-disable-line
       /***
        * state 状态：
        * 0 code 无效

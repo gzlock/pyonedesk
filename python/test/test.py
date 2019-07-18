@@ -5,8 +5,8 @@ import pytest
 from click.testing import CliRunner
 from diskcache import Cache
 
-from python.cli import commands
-from python.server.account import Account
+from cli import commands
+from server.account import Account
 
 
 @click.group()
