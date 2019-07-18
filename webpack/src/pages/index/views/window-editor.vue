@@ -14,6 +14,7 @@
     data() {
       return {
         $cm: null,
+        saving: false,
       }
     },
     methods: {
@@ -41,11 +42,20 @@
           this.$cm.setOption('mode', 'text/plain')
         }
       },
+      async save() {
+        this.saving = true
+        console.log('保存')
+        this.saving = false
+      },
     },
     mounted() {
       CodeMirror.modeURL = 'https://cdn.bootcss.com/codemirror/5.48.0/mode/%N/%N.js'
       this.$cm = CodeMirror(this.$el, {
         lineNumbers: true,
+        extraKeys: {
+          'Ctrl-S': this.save,
+          'Cmd-S': this.save,
+        },
       })
     },
   }

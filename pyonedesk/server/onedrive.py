@@ -1,7 +1,7 @@
 import requests
 from sanic.exceptions import ServerError
 
-from server.account import Account
+from .account import Account
 
 
 def accountQuota(account: Account) -> dict:

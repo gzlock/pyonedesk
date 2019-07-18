@@ -5,12 +5,12 @@ import pytest
 from click.testing import CliRunner
 from diskcache import Cache
 
-from cli import commands
-from server.account import Account
+from ..cli import commands
+from ..server.account import Account
 
 
 @click.group()
-@click.version_option(version='0.0.1', prog_name='pyonedrive')
+@click.version_option(version='0.0.1', prog_name='pyonedesk')
 @click.option('--debug', default=False, help="debug mode", type=bool)
 @click.pass_context
 def main(ctx, debug: bool):

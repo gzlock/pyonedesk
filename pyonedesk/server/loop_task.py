@@ -3,7 +3,7 @@ from multiprocessing import Process
 
 from diskcache import Cache
 
-from server.account import Account
+from .account import Account
 
 
 def worker(cache: Cache):

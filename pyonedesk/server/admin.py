@@ -9,7 +9,7 @@ from sanic import Blueprint, response
 from sanic.exceptions import Forbidden, NotFound, ServerError
 from shortuuid import ShortUUID
 
-from server.account import Account
+from .account import Account
 from .utils import sha256, aesDecrypt, aesEncrypt, createAppUrl, getCodeUrl
 
 admin = Blueprint('admin', url_prefix='/admin')

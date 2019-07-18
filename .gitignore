@@ -1,17 +1,17 @@
 cache/
 test_cache/
 idea/
+build/
+dist/
 __pycache__/
 *.iml
 *.idea
 开发信息.txt
 
-python/server/res/
-python/upload_test*.zip
+pyonedesk/server/res/
+pyonedesk/upload_test*.zip
 
 # pip包的数据
-pyonedrive.egg-info/
-build/
-dist/
+pyonedesk.egg-info/
 
 webpack/node_modules/

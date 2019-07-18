@@ -4,11 +4,11 @@ import os
 from sanic import Sanic
 from shortuuid import ShortUUID
 
-from server import loop_task
-from server.account import Account
-from server.utils import sha256
+from . import loop_task
+from .account import Account
 from .admin import admin, admin_api
 from .index import index
+from ..server.utils import sha256
 
 
 def server(obj, port: int, password: str):

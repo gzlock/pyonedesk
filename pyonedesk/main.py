@@ -8,11 +8,11 @@ import click
 from diskcache import Cache
 from hurry.filesize import size
 
-from cli import commands
-from config import config as default_config
-from server.account import Account
-from server.main import server
-from utils import md5, get_tree_size
+from .cli.commands import cli
+from .config import config as default_config
+from .server.account import Account
+from .server.main import server
+from .utils import md5, get_tree_size
 
 
 appName = 'PyOneDrive'
@@ -21,10 +21,10 @@ data_dir = os.path.join(appdirs.user_data_dir(appname=appName, appauthor='gzlock
 
 
 @click.group()
-@click.version_option(version='0.0.1', prog_name='pyonedrive')
+@click.version_option(version='0.0.1', prog_name='pyonedesk')
 @click.option('--debug', is_flag=True)
 @click.pass_context
-def cli(ctx, debug: bool):
+def main(ctx, debug: bool):
     ctx.ensure_object(dict)
     ctx.obj['debug'] = debug
     global data_dir
@@ -35,7 +35,7 @@ def cli(ctx, debug: bool):
     Account.cache = cache
 
 
-@cli.command('server')
+@main.command('server')
 @click.option(
     "--port",
     default=23333,
@@ -44,7 +44,7 @@ def cli(ctx, debug: bool):
 )
 @click.option(
     '--password',
-    default='pyonedrive',
+    default='pyonedesk',
     prompt=True,
     confirmation_prompt=True,
     hide_input=True,
@@ -71,7 +71,7 @@ def create_server(obj, port: int, password: str):
     server(obj, port, password)
 
 
-@cli.command('info')
+@main.command('info')
 def show_info():
     info = '数据目录:\t' + data_dir
     info += '\n数据容量:\t' + size(get_tree_size(data_dir))
@@ -79,7 +79,7 @@ def show_info():
     click.echo(info)
 
 
-cli.add_command(commands.cli)
+main.add_command(cli)
 
 if __name__ == '__main__':
-    cli(obj={})
+    main(obj={})

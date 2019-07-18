@@ -1,5 +1,8 @@
 import json
 import os
+import sys
+
+sys.path.append(os.path.realpath('../'))
 
 import click
 import requests
@@ -8,8 +11,8 @@ from diskcache import Cache
 from hurry.filesize import size
 from requests import Response
 
-from server.account import Account
-from utils import read_in_chunks
+from ..server.account import Account
+from ..utils import read_in_chunks
 
 
 @click.group()
