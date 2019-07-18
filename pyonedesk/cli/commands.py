@@ -1,8 +1,5 @@
 import json
 import os
-import sys
-
-sys.path.append(os.path.realpath('../'))
 
 import click
 import requests

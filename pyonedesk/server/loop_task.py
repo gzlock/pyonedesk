@@ -21,4 +21,7 @@ def worker(cache: Cache):
 
 
 def main(cache: Cache):
-    Process(target=worker, args=(cache,)).start()
+    try:
+        Process(target=worker, args=(cache,)).start()
+    except:
+        pass

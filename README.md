@@ -12,7 +12,7 @@
 - python 3.7
     - click
     - diskcache
-    - 更多库请看[requirements.txt](python/requirements.txt)
+    - 更多库请看[requirements.txt](pyondesk/requirements.txt)
 - vue
     - vue-cli
     - element-ui 
@@ -31,7 +31,7 @@
         - 命令行不提供添加OneDrive账号功能，因为使用网页方式添加更加方便
         - 假设有 A 和 B 两个账号，没有设置默认账号
         - 列出所有账号的别名
-            - `pyondrive cli accounts`
+            - `pyonedesk cli accounts`
             - 输出信息 `[ A, B ]`
         - 将别名为A的账号设置为默认账号 `pyonedesk cli --select A default`
         - [重要信息：什么是默认账号？](#默认账号)

@@ -8,11 +8,11 @@ import click
 from diskcache import Cache
 from hurry.filesize import size
 
-from .cli.commands import cli
-from .config import config as default_config
-from .server.account import Account
-from .server.main import server
-from .utils import md5, get_tree_size
+from pyonedesk.cli.commands import cli
+from pyonedesk.config import config as default_config
+from pyonedesk.server.account import Account
+from pyonedesk.server.main import server
+from pyonedesk.utils import md5, get_tree_size
 
 
 appName = 'PyOneDrive'
