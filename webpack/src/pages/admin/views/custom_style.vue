@@ -21,11 +21,6 @@
                 <div slot="label">文件图标ID<br>
                     <el-button type="text" @click="reset('icons')">单项还原</el-button>
                 </div>
-                <!--<el-tabs tab-position="left">
-                    <el-tab-pane :label="ui[key]" v-for="(icon,key) in form.icon.icons" :key="key">
-                        <el-input size="small" v-model="form.icon.icons[key]"/>
-                    </el-tab-pane>
-                </el-tabs>-->
                 <el-table :data="icons" border size="small">
                     <el-table-column prop="name" label="文件图标" width="140"/>
                     <el-table-column prop="value" label="ID">
@@ -42,8 +37,8 @@
                 <el-input type="textarea" :autosize="{ minRows: 3, maxRows: 5}" v-model="form.css"></el-input>
             </el-form-item>
             <el-form-item>
-                <el-button type="primary" @click="submit">提交</el-button>
-                <el-button type="text" @click="reset">全部还原</el-button>
+                <el-button type="primary" @click="submit">保存</el-button>
+                <el-button type="text" @click="reset('all')">全部还原</el-button>
             </el-form-item>
         </el-form>
     </div>
@@ -67,6 +62,7 @@
           text: '纯文本文件',
           code: '代码文件',
           zip: '压缩文件',
+          pdf: 'PDF文件',
           word: 'Office Word',
           excel: 'Office Excel',
           ppt: 'Office PowerPoint',

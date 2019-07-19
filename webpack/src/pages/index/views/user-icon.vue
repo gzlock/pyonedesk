@@ -16,26 +16,38 @@
   import { User } from '../js/user'
 
   export default {
-    props: { user: User, icon: Icons['user'] },
-    computed: {},
+    props: { user: User },
+    data() {
+      return {
+        icon: Icons['user'],
+      }
+    },
   }
 </script>
 
 <style lang="scss" scoped>
     .user {
+        width: 100px;
+        padding: 8px 0 0 2px;
         user-select: none;
 
-        .user-icon {
-            position: relative;
-            width: 60px;
-            height: 60px;
+        &:hover {
+            background: rgba(233, 238, 243, 0.6);
+            border-radius: 5px;
+        }
 
-            .main-icon {
-                width: 100%;
-                height: 100%;
+        .user-icon {
+            width: 100px;
+            height: 60px;
+            position: relative;
+
+            svg.main-icon {
+                width: 100px;
+                height: 60px;
+                text-align: center;
             }
 
-            .lock-icon {
+            svg.lock-icon {
                 position: absolute;
                 width: 20px;
                 height: 20px;

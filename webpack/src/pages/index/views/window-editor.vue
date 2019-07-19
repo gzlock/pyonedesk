@@ -1,6 +1,9 @@
 <template>
-    <div class="text-editor">
+    <div class="text-editor-container">
+        <div class="text-editor">
 
+        </div>
+        <div class="saving" :class="{show:saving}">保存中</div>
     </div>
 </template>
 
@@ -43,14 +46,23 @@
         }
       },
       async save() {
+        if(this.loading || this.saving)
+          return
         this.saving = true
-        console.log('保存')
+        await this.$http({
+          method: 'post',
+          url: '/admin/api/upload/' + this.user.id,
+          params: { path: this.file.path, type: 'text' },
+          data: this.$cm.getValue(),
+        })
+        // todo 需要处理 没有权限 的情况
+        // await Wait(2000)
         this.saving = false
       },
     },
     mounted() {
       CodeMirror.modeURL = 'https://cdn.bootcss.com/codemirror/5.48.0/mode/%N/%N.js'
-      this.$cm = CodeMirror(this.$el, {
+      this.$cm = CodeMirror(this.$el.querySelector('.text-editor'), {
         lineNumbers: true,
         extraKeys: {
           'Ctrl-S': this.save,
@@ -62,12 +74,45 @@
 </script>
 
 <style lang="scss">
-    .text-editor {
+    .text-editor-container {
         height: 100%;
+        position: relative;
+        overflow: hidden;
 
-        .CodeMirror {
+        .text-editor {
             width: 100%;
             height: 100%;
+            position: absolute;
+
+            .CodeMirror {
+                width: 100%;
+                height: 100%;
+            }
+        }
+
+        .saving {
+            width: 80px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: -30px;
+            margin-left: auto;
+            margin-right: auto;
+
+            background: rgba(32, 73, 105, 0.7);
+            border-radius: 0 0 5px 5px;
+            color: white;
+            transition: top 300ms;
+
+            &.show {
+                top: 0;
+            }
         }
     }
+
 </style>

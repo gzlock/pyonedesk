@@ -1,5 +1,5 @@
 <template>
-    <div class="folder">
+    <div class="folder" @dragover.prevent @drop.prevent="drop">
         <file-icon v-for="(file,i) in files" :key="i" :file="file"
                    @dblclick="open" :id="id"/>
     </div>
@@ -20,14 +20,35 @@
       return {
         loading: false,
         files: [],
+        uploads: [],
       }
     },
     watch: { file() {this.load()} },
     methods: {
+      drop(ev) {
+        console.log('drop', ev)
+        if(ev.dataTransfer.items) {
+          // Use DataTransferItemList interface to access the file(s)
+          for(let i = 0; i < ev.dataTransfer.items.length; i++) {
+            // If dropped items aren't files, reject them
+            if(ev.dataTransfer.items[i].kind === 'file') {
+              const file = ev.dataTransfer.items[i].getAsFile()
+              console.log('1 ... file[' + i + '].name = ' + file.name)
+            }
+          }
+        } else {
+          // Use DataTransfer interface to access the file(s)
+          for(let i = 0; i < ev.dataTransfer.files.length; i++) {
+            console.log('2 ... file[' + i + '].name = ' + ev.dataTransfer.files[i].name)
+          }
+        }
+      },
       open(file) {
         this.$emit('open', file)
       },
       async loadContent(force = false) {
+        //清空 上传列表
+        this.uploads.length = 0
         let path = ''
         if(this.file.path !== '/')
           path = `:${this.file.path}:`

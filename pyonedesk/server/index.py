@@ -58,7 +58,13 @@ async def default_icon_script(request):
 @index.get('/scripts/custom_icon_script')
 async def custom_icon_script(request):
     stylizes = request.app.cache.get('stylizes', default=default_stylizes)
-    return response.redirect('https:' + stylizes['icon']['src'])
+    try:
+        src = stylizes['icon']['src']
+        if len(src) > 0:
+            return response.redirect(src)
+    except:
+        pass
+    return response.text('', status=404)
 
 
 @index.get('/scripts/icons_script')
@@ -81,38 +87,6 @@ async def accounts(request):
 
 
 @index.get('/path/<user_id:string>')
-async def accounts(request, user_id: str):
-    account: Account = Account.get_by_id(user_id)
-    if account is None:
-        raise NotFound('不存在的账号别名')
-    path = request.raw_args.get('path')
-    if path is None:
-        path = '/'
-    elif ':/content' in path:
-        raise ServerError('不支持使用:/content读取文件内容')
-    data = account.get_item(path=path)
-    if isinstance(data, dict):
-        return response.json(data)
-    return response.raw(body=data)
-
-
-@index.get('/path/<user_id:string>/rename')
-async def accounts(request, user_id: str):
-    account: Account = Account.get_by_id(user_id)
-    if account is None:
-        raise NotFound('不存在的账号别名')
-    path = request.raw_args.get('path')
-    if path is None:
-        path = '/'
-    elif ':/content' in path:
-        raise ServerError('不支持使用:/content读取文件内容')
-    data = account.get_item(path=path)
-    if isinstance(data, dict):
-        return response.json(data)
-    return response.raw(body=data)
-
-
-@index.post('/path/<user_id:string>/save')
 async def accounts(request, user_id: str):
     account: Account = Account.get_by_id(user_id)
     if account is None:

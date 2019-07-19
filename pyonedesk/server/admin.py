@@ -1,9 +1,11 @@
 # coding:utf-8
 
+import copy
 import json
 import os
 import random
 
+import requests
 from diskcache import Cache
 from sanic import Blueprint, response
 from sanic.exceptions import Forbidden, NotFound, ServerError
@@ -119,7 +121,10 @@ async def get_stylizes(request):
     :param request:
     :return:
     """
-    stylizes = request.app.cache.get('stylizes', default=default_stylizes)
+    stylizes = copy.deepcopy(default_stylizes)
+    stylizes.update(request.app.cache.get('stylizes', default={}))
+    if stylizes['icon']['src'] == default_stylizes['icon']['src']:
+        stylizes['icon']['src'] = ''
     res = {'default': default_stylizes, 'custom': stylizes, }
     return response.json(res)
 
@@ -295,3 +300,42 @@ async def redirect_to_get_code_url(request, id: str):
     if account is None:
         return response.html('<h1>找不到对应的账号</h1>')
     return response.redirect(getCodeUrl(account=account))
+
+
+@admin_api.post('/upload/<user_id:string>')
+async def upload_file(request, user_id: str):
+    """
+    从微软接口返回上传文件的url，由网页前端上传文件到微软
+    :param request:
+    :param user_id:
+    :return:
+    """
+    account: Account = Account.get_by_id(user_id)
+    if account is None:
+        raise NotFound('不存在的账号别名')
+    path = request.raw_args.get('path')
+    if path is None:
+        raise ServerError('参数path是必须的')
+    if not path.startswith('/'):
+        path = '/' + path
+    type = request.raw_args.get('type')
+    if type is None or type not in ['text', 'file']:
+        raise ServerError('参数type是必须的，有text和file两种值')
+
+    upload_url = account.get_upload_url(path=path, behavior='replace')
+    headers = {'Content-Type': 'application/octet-stream'}
+    if type == 'text':
+        # 文本
+        size = len(request.body)
+        headers['Content-Length'] = str(size)
+        headers['Content-Range'] = 'bytes {start_size}-{end_size}/{size}'.format(
+            start_size=0,
+            end_size=size - 1,
+            size=size)
+        res = requests.put(upload_url, headers=headers, data=request.body)
+        print('上传文件', res.content)
+    else:
+        # 文件
+        pass
+
+    return response.text('ok')

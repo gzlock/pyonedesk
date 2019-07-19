@@ -12,22 +12,25 @@ module.exports = {
   pages: {
     index: {
       entry: 'src/pages/index/main.js',
-      title: 'PyOneDrive',
+      title: 'PyOneDesk',
       minify: {
         removeComments: false, // 移除HTML中的注释
         collapseWhitespace: true, // 删除空白符与换行符
         minifyCSS: true,// 压缩内联css
       },
+      template: 'public/index.html',
     },
     admin: {
       entry: 'src/pages/admin/main.js',
       filename: 'admin.html',
-      title: 'PyOneDrive管理后台',
+      title: 'PyOneDesk管理后台',
+      template: 'public/admin.html',
     },
     admin_login: {
       entry: 'src/pages/admin_login/main.js',
       filename: 'admin_login.html',
-      title: '登录PyOneDrive管理后台',
+      title: '登录PyOneDesk管理后台',
+      template: 'public/admin.html',
     },
     admin_get_code: {
       entry: 'src/pages/admin_get_code/main.js',

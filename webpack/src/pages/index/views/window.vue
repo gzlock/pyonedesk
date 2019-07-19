@@ -1,7 +1,7 @@
 <template>
-    <div class="folder-browser" :class="{active:$store.state.activeID === id}" @focus="focus" :style="{'z-index':z}"
+    <div class="window" :class="{active:$store.state.activeID === id,dragging}" @focus="focus" :style="{'z-index':z}"
          :tabindex="z" @blur="blur">
-        <div class="folder-browser--head">
+        <div class="window--head">
             <div class="name"> {{current.name}}</div>
             <div class="controller" style="margin-right: 10px">
                 <svg class="icon" aria-hidden="true" @click="load(true)" :class="{disabled:loading}">
@@ -21,10 +21,10 @@
                 </svg>
             </div>
         </div>
-        <div class="folder-browser--path">
+        <div class="window--path">
             路径：{{user.name}}{{current.path}}
         </div>
-        <div class="folder-browser--body" v-show="!dragging" :class="{loading:loading}"
+        <div class="window--body" v-show="!dragging" :class="{loading:loading}"
         >
             <window-loading v-if="loading"/>
             <template v-show="!loading">
@@ -70,8 +70,8 @@
     },
     methods: {
       focus() {
-        // console.log('focus', this.id)
-        this.$emit('focus', this.id)
+        if(this.$store.state.activeID !== this.id)
+          this.$emit('focus', this.id)
       },
       blur() {
         // console.log('blur', this.id)
@@ -129,7 +129,7 @@
     watch: {},
     mounted() {
       //处理 拖动 和 缩放
-      const $e = $(this.$el), $header = $e.find('.folder-browser--head')
+      const $e = $(this.$el), $header = $e.find('.window--head')
       $e.mousedown(() => {
         this.focus()
       }).draggable({
@@ -159,11 +159,10 @@
 <style scoped lang="scss">
     @import '@/assets/global.scss';
 
-    .folder-browser {
+    .window {
         outline: none;
         position: absolute;
-        background: rgba(255, 255, 255, 0.9);
-        /*border-radius: 4px;*/
+        background: rgba(255, 255, 255, 0.8);
         padding: 4px;
         display: flex;
         flex-direction: column;
@@ -176,7 +175,7 @@
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
         }
 
-        .folder-browser--head {
+        .window--head {
             /*border-radius: 4px 4px 0 0;*/
             user-select: none;
             background: white;
@@ -186,7 +185,7 @@
             .name {
                 font-size: 16px;
                 line-height: 30px;
-                padding-left: 5px;
+                padding-left: 10px;
                 box-sizing: content-box;
                 flex: 1;
                 overflow: hidden;
@@ -212,7 +211,7 @@
             }
         }
 
-        .folder-browser--path {
+        .window--path {
             padding: 5px;
             font-size: 12px;
             color: #ccc;
@@ -221,7 +220,7 @@
             background: white;
         }
 
-        .folder-browser--body {
+        .window--body {
             flex-grow: 1;
             overflow: auto;
             background: white;

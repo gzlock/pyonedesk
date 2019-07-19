@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import { Index } from '@/pages/index/preset'
+import { API } from '../admin/preset'
 
 const axios = require('axios')
 
@@ -59,6 +60,24 @@ export default new Vuex.Store({
       if(res.status === 200)
         context.commit('setCache', { url, res })
       return res
+    },
+    async uploadText(context, { user, path, content }) {
+      return await axios.post(
+        {
+          method: 'post',
+          url: API.uploadFile + '/' + user.id,
+          params: { path, type: 'text' },
+          data: content,
+        })
+    },
+    async uploadFiles(context, { user, path, content }) {
+      return await axios(
+        {
+          method: 'post',
+          url: API.uploadFile + '/' + user.id,
+          params: { path, type: 'binary' },
+          data: content,
+        })
     },
   },
 })

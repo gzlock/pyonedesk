@@ -1,4 +1,3 @@
-import json
 import os
 
 import click
@@ -149,6 +148,7 @@ def file_upload(obj: dict, file_path, target_path: str, force: bool):
     file_name = os.path.basename(file_path)
     size = os.path.getsize(file_path)
     chunk_size = 10 * 1024 * 1024
+
     token = account.token
     headers = make_header(token=token['access_token'], )
     headers['Content-Type'] = 'application/json'
@@ -157,15 +157,14 @@ def file_upload(obj: dict, file_path, target_path: str, force: bool):
     if not path.endswith('/'):
         path += '/'
     path += file_name
+    account.get_upload_url(path=path, behavior=behavior)
     url = 'https://graph.microsoft.com/v1.0/me/drive/root:{}:/createUploadSession'.format(path)
     print('url', url)
 
     has_error = None
-    res: Response = requests.post(url, headers=headers, data=json.dumps(data))
-    if res.status_code != 200:
-        has_error = res.json()['error']['message']
-    if has_error is None:
-        upload_url: str = res.json()['uploadUrl']
+    res = account.get_upload_url(path=path, behavior=behavior)
+    if 'uploadUrl' in res:
+        upload_url: str = res['uploadUrl']
         with open(file_path, 'rb') as file:
             offset_size = 0
             for chunk in read_in_chunks(file, chunk_size=chunk_size):
@@ -187,12 +186,11 @@ def file_upload(obj: dict, file_path, target_path: str, force: bool):
                 # 其余状态码不再继续上传
                 has_error = res.json()['error']['message']
                 break
-    if has_error is None:
         click.secho('上传成功：' + path, fg='green')
-    else:
-        if 'same name' in has_error:
-            has_error = '存在同名文件'
-        click.secho('上传失败：{}\n原因：{}'.format(path, has_error), fg='red')
+
+    if 'same name' in has_error:
+        has_error = '存在同名文件'
+    click.secho('上传失败：{}\n原因：{}'.format(path, has_error), fg='red')
 
 
 @cli.command('rm')

@@ -20,11 +20,12 @@ stylizes = {
             'text': 'py_txt',
             'code': 'py_html',
             'zip': 'py_zip',
+            'pdf': 'py_pdf',
             'word': 'py_word',
             'excel': 'py_excel',
             'ppt': 'py_ppt',
         },
     },
     # 全局样式
-    'css': 'body{background:#99a9bf}',
+    'css': 'body{ background: #99a9bf; }',
 }

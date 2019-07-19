@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import time
 from typing import Optional, Dict
 
@@ -200,19 +201,33 @@ class Account:
         Account.cache['accounts'] = accounts
         return self
 
-    def get_item(self, path: str = None,
+    def get_upload_url(self, path: str, behavior: str = 'replace'):
+        path = ':{}:/createUploadSession'.format(path)
+        data = json.dumps({'item': {'@microsoft.graph.conflictBehavior': behavior}})
+        return self.get_item(path=path, method='post', data=data).get('uploadUrl')
+
+    def get_item(self, path: str = None, method: str = 'get', data: str = '',
+                 headers: dict = {},
                  url: str = 'https://graph.microsoft.com/v1.0/me/drive') -> Optional[dict, bytes]:
         """
         获取OneDrive文件信息
         :return:
         """
-        if path is None or path == '/':
+        if path is None:
             url += '/root'
+        elif path == '/':
+            url += 'root'
         else:
             url += '/root' + path
 
+        headers.update(make_header(self.token.get('access_token')))
+        if method.lower() == 'post':
+            headers.update({'Content-Type': 'application/json'})
         print('get_item', url)
-        res = requests.get(url, headers=make_header(self.token.get('access_token')))
+        # res = requests.get(url, headers=make_header(self.token.get('access_token')))
+        res = requests.request(
+            method=method, url=url, data=data,
+            headers=headers)
         try:
             return res.json()
         except:

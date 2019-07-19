@@ -8,6 +8,7 @@ import click
 from diskcache import Cache
 from hurry.filesize import size
 
+from pyonedesk import __version__
 from pyonedesk.cli.commands import cli
 from pyonedesk.config import config as default_config
 from pyonedesk.server.account import Account
@@ -21,7 +22,7 @@ data_dir = os.path.join(appdirs.user_data_dir(appname=appName, appauthor='gzlock
 
 
 @click.group()
-@click.version_option(version='0.0.1', prog_name='pyonedesk')
+@click.version_option(version=__version__, prog_name='pyonedesk')
 @click.option('--debug', is_flag=True)
 @click.pass_context
 def main(ctx, debug: bool):

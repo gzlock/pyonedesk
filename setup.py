@@ -6,6 +6,8 @@ import shutil
 
 from setuptools import setup
 
+from pyonedesk import __version__
+
 
 # 读取文件内容
 def read_file(filename):
@@ -22,7 +24,7 @@ for dir in clear_dir:
 
 setup(
     name='pyonedesk',  # 应用名
-    version='0.0.10',  # 版本号
+    version=__version__,  # 版本号
     author="gzlock",
     author_email="gzlock88@gmail.com",
     description="PyOneDesk",
