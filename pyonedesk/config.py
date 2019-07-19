@@ -18,11 +18,11 @@ stylizes = {
             'audio': 'py_mp',
             'image': 'py_jpg',
             'text': 'py_txt',
+            'code': 'py_html',
             'zip': 'py_zip',
             'word': 'py_word',
             'excel': 'py_excel',
             'ppt': 'py_ppt',
-            'code': 'py_html',
         },
     },
     # 全局样式
