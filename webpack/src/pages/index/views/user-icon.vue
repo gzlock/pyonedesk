@@ -2,10 +2,10 @@
     <div class="user" @dblclick="$emit('dblclick',user)">
         <div class="user-icon">
             <svg class="icon main-icon" aria-hidden="true">
-                <use xlink:href="#iconfolder-personal"></use>
+                <use :xlink:href="'#'+icon"></use>
             </svg>
             <svg class="icon lock-icon" aria-hidden="true" v-if="user.lock">
-                <use xlink:href="#iconlock"></use>
+                <use xlink:href="#py_lock"></use>
             </svg>
         </div>
         <div class="user-name">{{user.name}}</div>
@@ -16,7 +16,7 @@
   import { User } from '../js/user'
 
   export default {
-    props: { user: User },
+    props: { user: User, icon: Icons['user'] },
     computed: {},
   }
 </script>

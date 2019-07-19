@@ -9,6 +9,7 @@ from sanic import Blueprint, response
 from sanic.exceptions import Forbidden, NotFound, ServerError
 from shortuuid import ShortUUID
 
+from pyonedesk.config import stylizes as default_stylizes
 from .account import Account
 from .utils import sha256, aesDecrypt, aesEncrypt, createAppUrl, getCodeUrl
 
@@ -98,6 +99,35 @@ async def check_token(request):
 async def get_accounts_list(request):
     """
     获取账号列表
+    :param request:
+    :return:
+    """
+    res = {}
+    accounts = Account.get_accounts()
+    default_id = request.app.cache.get('default_account_id')
+    for account in accounts.values():
+        res[account.id] = account.to_json()
+        if account.id == default_id:
+            res[account.id]['default'] = True
+    return response.json(res)
+
+
+@admin_api.get('/stylizes')
+async def get_stylizes(request):
+    """
+    样式数据
+    :param request:
+    :return:
+    """
+    stylizes = request.app.cache.get('stylizes', default=default_stylizes)
+    res = {'default': default_stylizes, 'custom': stylizes, }
+    return response.json(res)
+
+
+@admin_api.post('/stylizes')
+async def post_stylizes(request):
+    """
+    处理提交的样式数据
     :param request:
     :return:
     """

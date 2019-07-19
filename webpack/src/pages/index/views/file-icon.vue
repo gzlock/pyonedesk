@@ -3,7 +3,7 @@
          @contextmenu.prevent="e=>$store.commit('showMenu',{e,id,file})">
         <div class="file-icon" v-if="image"><img :src="file.thumbnail"/></div>
         <svg class="icon file-icon" aria-hidden="true" v-else>
-            <use :xlink:href="icon"></use>
+            <use :xlink:href="'#'+icon"></use>
         </svg>
         <div class="file-name">{{file.name}}</div>
     </div>
@@ -19,29 +19,29 @@
       icon() {
         switch(this.file.type) {
           case FileType.Folder:
-            return '#iconfolder'
+            return Icons['folder']
           case FileType.Audio:
-            return '#iconmp'
+            return Icons['audio']
           case FileType.Video:
-            return '#iconvideo'
+            return Icons['video']
           case FileType.Image:
-            return '#iconjpg'
+            return Icons['image']
           case FileType.Text:
-            return '#icontxt'
+            return Icons['text']
           case FileType.Zip:
-            return '#iconzip'
+            return Icons['zip']
           case FileType.PDF:
-            return '#iconpdf'
+            return Icons['pdf']
           case FileType.Word:
-            return '#iconword'
+            return Icons['word']
           case FileType.Excel:
-            return '#iconexcel'
+            return Icons['excel']
           case FileType.PPT:
-            return '#iconppt'
+            return Icons['ppt']
           case FileType.Code:
-            return '#iconhtml'
+            return Icons['code']
           default:
-            return '#iconwhite'
+            return Icons['default']
         }
       },
     },

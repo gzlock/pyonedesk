@@ -9,4 +9,5 @@ export const API = {
   account: prefix + '/account',
   goCreateAppUrl: prefix + '/go_create_app',
   goGetCode: prefix + '/go_get_code',
+  stylizes: prefix + '/stylizes',
 }

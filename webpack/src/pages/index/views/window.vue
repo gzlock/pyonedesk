@@ -5,19 +5,19 @@
             <div class="name"> {{current.name}}</div>
             <div class="controller" style="margin-right: 10px">
                 <svg class="icon" aria-hidden="true" @click="load(true)" :class="{disabled:loading}">
-                    <use xlink:href="#iconshuaxin"></use>
+                    <use xlink:href="#py_shuaxin"></use>
                 </svg>
                 <svg class="icon" aria-hidden="true" @click="go()" :class="{disabled:loading || historyIndex <= 0}">
-                    <use xlink:href="#iconhoutui"></use>
+                    <use xlink:href="#py_houtui"></use>
                 </svg>
                 <svg class="icon" aria-hidden="true" @click="go(1)"
                      :class="{disabled:loading || (historyIndex >= history.length-1)}">
-                    <use xlink:href="#iconqianjin"></use>
+                    <use xlink:href="#py_qianjin"></use>
                 </svg>
             </div>
             <div class="controller">
                 <svg class="icon" aria-hidden="true" @click="$emit('close',id)">
-                    <use xlink:href="#iconguanbi"></use>
+                    <use xlink:href="#py_guanbi"></use>
                 </svg>
             </div>
         </div>

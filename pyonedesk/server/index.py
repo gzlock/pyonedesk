@@ -1,10 +1,13 @@
+import json
 import os
 
+from diskcache import Cache
 from sanic import Blueprint, response
 from sanic.exceptions import NotFound, ServerError
 
 from .account import Account
 from .admin import get_accounts_list
+from ..config import stylizes as default_stylizes
 
 res_dir = os.path.join(os.path.dirname(__file__), 'res')
 
@@ -13,7 +16,63 @@ index = Blueprint('index', url_prefix='/')
 
 @index.get('/')
 async def index_page(request):
-    return await response.file(os.path.join(res_dir, 'index.html'))
+    cache: Cache = request.app.cache
+    stylizes: dict = cache.get('stylizes', default=default_stylizes)
+    with open(os.path.join(res_dir, 'index.html')) as file:
+        html = file.read()
+
+        default_icon_src = default_stylizes['icon']['src']
+        html = html.replace(
+            '<!--default_icon_src-->',
+            '<script src="{}"></script>'.format(default_icon_src))
+
+        custom_icon_src = stylizes['icon']['src']
+        replace = ''
+        if custom_icon_src != default_icon_src:
+            replace = '<script src="{}"></script>'.format(custom_icon_src)
+
+        custom_icons = stylizes['icon']['icons']
+
+        replace += '<script>var Icons={}</script>'.format(json.dumps(custom_icons))
+        html = html.replace('<!--icon_src-->', replace)
+        html = html.replace('<!--styles-->', '<style>{}</style>'.format(stylizes['css']))
+    return response.html(html)
+
+
+@index.get('/stylizes')
+async def get_stylizes(request):
+    stylizes = request.app.cache.get('stylizes', default=default_stylizes)
+    data = {
+        'default_icon_src': default_stylizes['icon']['src'],
+        'custom_icon_src': stylizes['icon']['src'],
+        'icons': stylizes['icon']['icons']
+    }
+    return response.json(data)
+
+
+@index.get('/scripts/default_icon_script')
+async def default_icon_script(request):
+    return response.redirect('https:' + default_stylizes['icon']['src'])
+
+
+@index.get('/scripts/custom_icon_script')
+async def custom_icon_script(request):
+    stylizes = request.app.cache.get('stylizes', default=default_stylizes)
+    return response.redirect('https:' + stylizes['icon']['src'])
+
+
+@index.get('/scripts/icons_script')
+async def icons_script(request):
+    stylizes = request.app.cache.get('stylizes', default=default_stylizes)
+    return response.text(
+        'var Icons = ' + json.dumps(stylizes['icon']['icons']),
+        content_type='application/javascript')
+
+
+@index.get('/style')
+async def style(request):
+    stylizes = request.app.cache.get('stylizes', default=default_stylizes)
+    return response.text(stylizes['css'], content_type='text/css')
 
 
 @index.get('/accounts')

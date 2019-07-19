@@ -16,6 +16,7 @@ module.exports = {
     'Vue': false,
     'CodeMirror': false,
     'DPlayer': false,
+    'Icons': false,
   },
   'parserOptions': {
     'ecmaVersion': 2018,

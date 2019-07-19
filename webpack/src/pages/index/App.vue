@@ -94,7 +94,6 @@
     @import "@/assets/global.scss";
 
     .desktop {
-        background: #99a9bf;
         display: flex;
         flex-wrap: wrap;
         align-items: flex-start;

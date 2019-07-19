@@ -1,7 +1,7 @@
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const path = require('path')
 
-const outputDir = path.join(__dirname, '..', 'python', 'server', 'res')
+const outputDir = path.join(__dirname, '..', 'pyonedesk', 'server', 'res')
 
 console.log({ outputDir })
 
@@ -10,7 +10,15 @@ module.exports = {
   outputDir,
   assetsDir: 'resources',
   pages: {
-    index: { entry: 'src/pages/index/main.js', title: 'PyOneDrive' },
+    index: {
+      entry: 'src/pages/index/main.js',
+      title: 'PyOneDrive',
+      minify: {
+        removeComments: false, // 移除HTML中的注释
+        collapseWhitespace: true, // 删除空白符与换行符
+        minifyCSS: true,// 压缩内联css
+      },
+    },
     admin: {
       entry: 'src/pages/admin/main.js',
       filename: 'admin.html',

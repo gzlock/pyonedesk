@@ -14,6 +14,10 @@
                 <br>
                 创建途中一定要记录下应用ID和应用机密钥匙，并填入到输入框。
             </el-form-item>
+            <el-form-item label="系统ID">
+                {{form.id}}
+                <div style="color: #999;">PyOneDesk识别账号用的</div>
+            </el-form-item>
             <el-form-item label="应用 ID" prop="client_id">
                 <el-input v-model="form.client_id" ref="client_id">
                     <el-button slot="prepend" @click="paste('client_id')">粘贴</el-button>

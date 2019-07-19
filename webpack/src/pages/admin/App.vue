@@ -5,8 +5,10 @@
                 <div class="title">
                     <el-button circle size="mini" icon="el-icon-s-home" title="首页" @click="open('/')"></el-button>
                     账号列表
-                    <el-button title="添加账号" type="text" size="mini" icon="el-icon-plus"
+                    <el-button type="text" size="mini" icon="el-icon-plus"
                                @click.native="open({name:'add'})"></el-button>
+                    <el-button type="text" size="mini" icon="el-icon-s-tools"
+                               @click.native="open({name:'style_setting'})"></el-button>
                 </div>
                 <div class="item" v-for="(account,id) in accounts" :key="id"
                      :class="{'el-button--text':account.id===openID}" @click="open({name: 'edit', params:{id}})">
