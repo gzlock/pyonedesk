@@ -131,14 +131,10 @@ async def post_stylizes(request):
     :param request:
     :return:
     """
-    res = {}
-    accounts = Account.get_accounts()
-    default_id = request.app.cache.get('default_account_id')
-    for account in accounts.values():
-        res[account.id] = account.to_json()
-        if account.id == default_id:
-            res[account.id]['default'] = True
-    return response.json(res)
+    data = request.json
+    cache: Cache = request.app.cache
+    cache.set('stylizes', data)
+    return response.text('')
 
 
 @admin_api.get('/account/<id:string>')
