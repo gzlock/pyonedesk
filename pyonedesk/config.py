@@ -3,13 +3,13 @@ config = {
     'aes_key': 'PyOneDrive',
 }
 
-# 默认的样式数据，后台管理网页提供了丰富的自定义功能，⚠️不建议修改这里的数据⚠️
+# 默认的样式数据，后台管理网页提供了丰富的自定义功能，⚠️不要修改这里的数据⚠️
 stylizes = {
     # svg矢量图标
     'icon': {
-        # iconfont.cn->我的项目->Symbol->js文件链接
-        'src': '//at.alicdn.com/t/font_1295827_g4ldund2ej.js',
-        # icon_* 对应的是图标id
+        # iconfont.cn->我的项目->Symbol->js文件链接，这是兜底用的，不要修改
+        'src': '//at.alicdn.com/t/font_1295827_vv9pgi7w6r.js',
+        # 对应的是图标id
         'icons': {
             'default': 'py_white',
             'user': 'py_folder-personal',

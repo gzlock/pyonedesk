@@ -16,16 +16,32 @@
                 </svg>
             </div>
             <div class="controller">
-                <svg class="icon" aria-hidden="true" @click="$emit('close',id)">
+                <svg class="icon" aria-hidden="true" @click="close">
                     <use xlink:href="#py_guanbi"></use>
                 </svg>
             </div>
         </div>
         <div class="window--path">
-            路径：{{user.name}}{{current.path}}
+            <div class="path">
+                路径：{{user.name}}{{current.path}}
+            </div>
+
+            <div class="controller" v-if="loading === false && showFolder">
+                <div @click="upload('file')">
+                    <svg class="icon" aria-hidden="true" :class="{disabled:loading}">
+                        <use xlink:href="#py_shangchuan1"></use>
+                    </svg>
+                    文件
+                </div>
+                <div @click="upload('folder')">
+                    <svg class="icon" aria-hidden="true" :class="{disabled:loading}">
+                        <use xlink:href="#py_shangchuan1"></use>
+                    </svg>
+                    文件夹
+                </div>
+            </div>
         </div>
-        <div class="window--body" v-show="!dragging" :class="{loading:loading}"
-        >
+        <div class="window--body" v-show="!dragging" :class="{loading:loading}">
             <window-loading v-if="loading"/>
             <template v-show="!loading">
                 <template v-if="showFolder">
@@ -69,9 +85,16 @@
       }
     },
     methods: {
+      upload(type) {
+        if(this.loading === false && this.$refs['content'].click_upload)
+          this.$refs['content'].click_upload(type)
+      },
+      close() {
+        this.$store.commit('closeWindow', this.id)
+      },
       focus() {
         if(this.$store.state.activeID !== this.id)
-          this.$emit('focus', this.id)
+          this.$store.commit('windowSetTop', this.id)
       },
       blur() {
         // console.log('blur', this.id)
@@ -204,7 +227,7 @@
                     }
 
                     &.disabled {
-                        color: #999;
+                        fill: #999;
                         background: transparent !important;
                     }
                 }
@@ -212,13 +235,54 @@
         }
 
         .window--path {
-            padding: 5px;
+            height: 26px;
+            flex-shrink: 0;
             font-size: 12px;
             color: #ccc;
             border-top: 1px solid #ccc;
             border-bottom: 1px solid #eee;
             background: white;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+
+            .path {
+                flex: 1;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .controller {
+                display: flex;
+                color: black;
+                height: 100%;
+
+                div {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    cursor: pointer;
+                    padding: 0 5px;
+                    height: 100%;
+
+                    & + div {
+                        margin-left: 10px;
+                    }
+
+                    &:hover {
+                        background: #D3DCE6;
+                    }
+                }
+
+                svg.icon {
+                    width: 14px;
+                    height: 14px;
+                    margin-right: 5px;
+                }
+            }
         }
+
 
         .window--body {
             flex-grow: 1;

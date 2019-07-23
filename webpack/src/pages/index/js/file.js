@@ -2,15 +2,21 @@ export const FileType = Object.freeze({
   Normal: Symbol('normal'),
   Image: Symbol('image'),
   Audio: Symbol('audio'),
-  Video: Symbol('Video'),
+  Video: Symbol('video'),
   Text: Symbol('text'),
-  Code: Symbol('Code'),
+  Code: Symbol('code'),
   Word: Symbol('word'),
   Excel: Symbol('excel'),
   PPT: Symbol('ppt'),
   Zip: Symbol('zip'),
   Folder: Symbol('folder'),
   PDF: Symbol('pdf'),
+})
+export const FileState = Object.freeze({
+  Normal: Symbol('normal'),//正常状态
+  Uploading: Symbol('uploading'),//上传文件中
+  Waiting: Symbol('waiting'),//上传文件队列等待
+  Deleting: Symbol('deleting'),//正在删除文件
 })
 
 // https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Complete_list_of_MIME_types
@@ -72,6 +78,7 @@ export class File {
   constructor(name, path, mimeType, thumbnail) {
     this.name = name
     this.mimeType = mimeType
+    this.state = FileState.Normal
     if(!mimeType)
       this.type = FileType.Folder
     else if(mimeType.indexOf('image/') !== -1)

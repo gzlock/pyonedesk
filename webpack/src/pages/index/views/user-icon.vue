@@ -1,5 +1,5 @@
 <template>
-    <div class="user" @dblclick="$emit('dblclick',user)">
+    <div class="user" @dblclick="open">
         <div class="user-icon">
             <svg class="icon main-icon" aria-hidden="true">
                 <use :xlink:href="'#'+icon"></use>
@@ -14,6 +14,7 @@
 
 <script>
   import { User } from '../js/user'
+  import { File } from '../js/file'
 
   export default {
     props: { user: User },
@@ -21,6 +22,11 @@
       return {
         icon: Icons['user'],
       }
+    },
+    methods: {
+      open() {
+        this.$store.commit('createWindow', { user: this.user, file: new File('/', '/'), active: true })
+      },
     },
   }
 </script>

@@ -7,12 +7,14 @@ import random
 
 import requests
 from diskcache import Cache
+from requests import Response
 from sanic import Blueprint, response
 from sanic.exceptions import Forbidden, NotFound, ServerError
 from shortuuid import ShortUUID
 
 from pyonedesk.config import stylizes as default_stylizes
-from .account import Account
+from utils import upload
+from .account import Account, make_header
 from .utils import sha256, aesDecrypt, aesEncrypt, createAppUrl, getCodeUrl
 
 admin = Blueprint('admin', url_prefix='/admin')
@@ -316,26 +318,54 @@ async def upload_file(request, user_id: str):
     path = request.raw_args.get('path')
     if path is None:
         raise ServerError('参数path是必须的')
-    if not path.startswith('/'):
-        path = '/' + path
-    type = request.raw_args.get('type')
-    if type is None or type not in ['text', 'file']:
+    if path == '/':
+        raise ServerError('path参数不能是/')
+
+    content_type = request.raw_args.get('type')
+    if content_type is None or content_type not in ['text', 'file']:
         raise ServerError('参数type是必须的，有text和file两种值')
 
-    upload_url = account.get_upload_url(path=path, behavior='replace')
-    headers = {'Content-Type': 'application/octet-stream'}
-    if type == 'text':
-        # 文本
-        size = len(request.body)
-        headers['Content-Length'] = str(size)
-        headers['Content-Range'] = 'bytes {start_size}-{end_size}/{size}'.format(
-            start_size=0,
-            end_size=size - 1,
-            size=size)
-        res = requests.put(upload_url, headers=headers, data=request.body)
-        print('上传文件', res.content)
+    if content_type == 'file':
+        content = request.files.get('file')
+        if content is None:
+            return response.text('缺少文件字段名file', status=500)
+        content = content.body
     else:
-        # 文件
-        pass
+        content = request.body
 
-    return response.text('ok')
+    if not path.startswith('/'):
+        path = '/' + path
+
+    upload_url = account.get_upload_url(path=path, behavior='replace')
+    print('上传url', upload_url)
+    try:
+        res = upload(upload_url, content)
+        return response.json(res)
+    except Exception as e:
+        raise ServerError(e)
+
+
+@admin_api.delete('/<user_id:string>')
+async def delete_file(request, user_id: str):
+    account: Account = Account.get_by_id(user_id)
+    if account is None:
+        raise NotFound('不存在的账号别名')
+    path = request.raw_args.get('path')
+    if path is None:
+        raise ServerError('参数path是必须的')
+    if path == '/':
+        raise ServerError('path参数不能是/')
+
+    info = account.get_item(':{}'.format(path))
+    # print(info)
+    if 'error' in info:
+        raise NotFound('路径不存在')
+    elif 'id' in info:
+        url = 'https://graph.microsoft.com/v1.0/me/drive/items/' + info['id']
+        headers = make_header(account.token['access_token'])
+        # print('删除', url, headers)
+        res: Response = requests.delete(url, headers=headers)
+        if res.status_code == 204:
+            return response.text('ok')
+        else:
+            raise ServerError('删除失败：{}\n原因：{}'.format(path, res.json()['error']['message']))

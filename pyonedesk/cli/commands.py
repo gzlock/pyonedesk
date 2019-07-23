@@ -8,7 +8,7 @@ from hurry.filesize import size
 from requests import Response
 
 from ..server.account import Account
-from ..utils import read_in_chunks
+from ..utils import upload
 
 
 @click.group()
@@ -134,7 +134,7 @@ def make_header(token: str) -> dict:
 @click.argument('target_path', type=str, default='')
 @click.option('--force', '-f', 'force', is_flag=True)
 @click.pass_obj
-def file_upload(obj: dict, file_path, target_path: str, force: bool):
+def upload_file(obj: dict, file_path: str, target_path: str, force: bool):
     print({'obj': obj, 'target_path': target_path, 'force': force})
     if os.path.exists(file_path) is False:
         click.secho('{} 不存在', fg='red')
@@ -146,14 +146,11 @@ def file_upload(obj: dict, file_path, target_path: str, force: bool):
     path = __cd_path(obj=obj, account=account, path=target_path)
     print('上传目录', path)
     file_name = os.path.basename(file_path)
-    size = os.path.getsize(file_path)
-    chunk_size = 10 * 1024 * 1024
 
     token = account.token
     headers = make_header(token=token['access_token'], )
     headers['Content-Type'] = 'application/json'
     behavior = 'replace' if force else 'fail'
-    data = {'item': {'@microsoft.graph.conflictBehavior': behavior}}
     if not path.endswith('/'):
         path += '/'
     path += file_name
@@ -161,36 +158,12 @@ def file_upload(obj: dict, file_path, target_path: str, force: bool):
     url = 'https://graph.microsoft.com/v1.0/me/drive/root:{}:/createUploadSession'.format(path)
     print('url', url)
 
-    has_error = None
-    res = account.get_upload_url(path=path, behavior=behavior)
-    if 'uploadUrl' in res:
-        upload_url: str = res['uploadUrl']
-        with open(file_path, 'rb') as file:
-            offset_size = 0
-            for chunk in read_in_chunks(file, chunk_size=chunk_size):
-                chunk_length = len(chunk)
-                headers = {'Content-Type': 'application/octet-stream'}
-                length = headers['Content-Length'] = str(chunk_length)
-                range = headers['Content-Range'] = 'bytes {start_size}-{end_size}/{size}'.format(
-                    start_size=offset_size,
-                    end_size=offset_size + chunk_length - 1,
-                    size=size)
-                print(length, range)
-                offset_size += chunk_length
-                res = requests.put(upload_url, headers=headers, data=chunk)
-                print('res', res.status_code, res.json())
-                if res.status_code in [200, 201, 202]:
-                    # 200 201 上传完成
-                    # 202 需要继续上传
-                    continue
-                # 其余状态码不再继续上传
-                has_error = res.json()['error']['message']
-                break
+    upload_url = account.get_upload_url(path=path, behavior=behavior)
+    try:
+        upload(upload_url, file_path)
         click.secho('上传成功：' + path, fg='green')
-
-    if 'same name' in has_error:
-        has_error = '存在同名文件'
-    click.secho('上传失败：{}\n原因：{}'.format(path, has_error), fg='red')
+    except Exception as e:
+        click.secho('上传失败：{}\n原因：{}'.format(path, e), fg='red')
 
 
 @cli.command('rm')

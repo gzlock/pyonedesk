@@ -1,4 +1,4 @@
-# OneDrive网盘的轮子
+# OneDrive网盘的Python轮子
 ##### 可能会比现有的轮子要新要圆？
 
 配套
@@ -8,11 +8,19 @@
 - 网站管理后台（管理OneDrive账号）
 - 网站前端（文件选择器）
 
+普通用户通过pip安装pyonedesk即可
+`pip3 install pyonedesk`
+
+专业用户
+1. `cd ./webpack && npm run build`生成网页数据
+2. `cd ../pyonedesk/ && python3 main.py server --port 23333` 启动网页服务，更多使用方法请看使用介绍
+
+
 基于
 - python 3.7
     - click
     - diskcache
-    - 更多库请看[requirements.txt](pyondesk/requirements.txt)
+    - 更多库请看[requirements.txt](pyonedesk/requirements.txt)
 - vue
     - vue-cli
     - element-ui 
@@ -73,7 +81,7 @@
     - `pyonedesk cli --select B ls`
 - 将账号A设置为默认账号的情况下：
     - `pyonedesk cli --select A default`
-    - `pyonedesk cd /目录A1`
+    - `pyonedesk cli cd /目录A1`
     - `pyonedesk cli ls`
     - `pyonedesk cli cd /目录A2`
     - `pyonedesk cli ls`
