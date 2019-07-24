@@ -1,6 +1,6 @@
 <template>
     <div @dragenter.prevent="dragEnter" @dragover.prevent
-         @drop.prevent="dropFile" class="folder-container">
+         @drop.prevent="dropFile" class="folder-container" @paste.prevent="paste">
         <div class="upload-icon" v-if="isDragEnter" @dragleave.prevent="dragLeave" ref="dragLeave">
             <svg aria-hidden="true" class="icon">
                 <use data-v-093dcf52="" xlink:href="#py_shangchuan1"></use>
@@ -12,21 +12,41 @@
         </div>
         <!--正常文件-->
         <div class="folder">
-            <file-icon v-for="(file,i) in files" :key="i" :file="file" @dblclick="open" :id="id"/>
+            <file-icon v-for="(_file,i) in files" :key="i" :parent="file" :file="_file" @dblclick="open" :id="id"/>
         </div>
 
-        <!--上传队列-->
+        <!--上传中-->
         <div class="top-border" v-if="uploading.length > 0">
-            <div class="header">上传中</div>
+            <div class="header">
+                上传中，同时上传：
+                <el-select size="small" v-model="queueConcurrency">
+                    <el-option value="1">1</el-option>
+                    <el-option value="2">2</el-option>
+                    <el-option value="5">5</el-option>
+                    <el-option value="8">8</el-option>
+                    <el-option value="10">10</el-option>
+                </el-select>
+            </div>
             <div class="folder">
-                <file-icon v-for="(file,i) in uploading" :key="i" :file="file" :id="id"/>
+                <file-icon v-for="(item,i) in uploading" :key="i" :parent="file" :file="item.file" :id="id"/>
             </div>
         </div>
-        <div class="top-border" v-if="waiting.length > 0">
-            <div class="header">等候上传</div>
+        <!--上传失败-->
+        <div class="top-border" v-if="uploadFails.length > 0">
+            <div class="header">上传失败
+                <el-button type="text" @click="clearUploadFail">清空</el-button>
+            </div>
             <div class="folder">
-                <file-icon v-for="(file,i) in waiting" :key="i" :file="file" :id="id"
-                           @cancelUpload="cancelUpload"/>
+                <file-icon v-for="(item,i) in uploadFails" :key="i" :parent="file" :file="item.file" :id="id"/>
+            </div>
+        </div>
+        <!--等待上传-->
+        <div class="top-border" v-if="waiting.length > 0">
+            <div class="header">等候上传
+                <el-button type="text" @click="clearWaiting">全部取消</el-button>
+            </div>
+            <div class="folder">
+                <file-icon v-for="(item,i) in waiting" :key="i" :parent="file" :file="item.file" :id="id"/>
             </div>
         </div>
         <input type="file" style="display: none" class="hidden-file-input" multiple ref="fileInput"
@@ -40,6 +60,7 @@
   import FileIcon from './file-icon'
   import { File, FileState, FileType } from '../js/file'
   import { WindowEvent } from '../js/window'
+  import { findIndex } from 'lodash'
 
   async function traverseFileTree(file, path) {
     path = path || ''
@@ -48,7 +69,7 @@
       // Get file
       await new Promise(resolve => {
         file.file(f => {
-          const file = new File(f.name, path + f.name, f.type)
+          const file = new File(f.name, f.type)
           file.file = f
           files.push(file)
           resolve()
@@ -93,8 +114,30 @@
       waiting() {
         return this.$store.getters.getUploading(this.user, this.file.path, FileState.Waiting)
       },
+      uploadFails() {
+        return this.$store.getters.getUploading(this.user, this.file.path, FileState.UploadFail)
+      },
+      queueConcurrency: {
+        get: function() {
+          return this.$store.getters.getUploadQueueConcurrency
+        },
+        set: function(value) {
+          console.log('改变队列数量', value)
+          this.$store.commit('setUploadQueueConcurrency', value)
+        },
+      },
+      uploadCount() {
+        return this.$store.state.uploading.filter(({ path }) => path === this.parent.path).length
+      },
     },
     methods: {
+      paste(e) {
+        console.log('粘贴事件', e)
+        const clipboardData = (e.clipboardData || e.originalEvent.clipboardData)
+        if(clipboardData.items) {
+          console.log('粘贴板有内容', clipboardData.items.length)
+        }
+      },
       dragEnter() {
         // console.log('dragEnter', e.target)
         if(this.isDragEnter)
@@ -124,25 +167,47 @@
         for(let i = 0; i < files.length; i++) {
           const file = files[i]
           console.log('input file', file)
-          const _file = new File(file.name, path + file.webkitRelativePath + file.name, file.type)
+          const _file = new File(file.name, path + file.webkitRelativePath, file.type)
           _file.file = file
-          this.$store.commit('addUploadFile', { id: this.id, user: this.user, path: this.file.path, file: _file })
+
+          const index = findIndex(this.files, { path: file.path, name: file.name })
+          if(index > -1) {
+            this.$confirm(`${file.name} 已经存在，是否覆盖？`).then(() => {
+              this.$store.commit('uploadFile', { id: this.id, path: this.file.path, file })
+            }).catch(() => {})
+          }
+          this.$store.commit('uploadFile', { id: this.id, path: this.file.path, file: _file })
         }
       },
       async dropFile(e) {
         //通过 拖文件 上传文件
         this.isDragEnter = false
+
         const path = this.file.path === '/' ? this.file.path : this.file.path + '/'
         const items = e.dataTransfer.items, files = []
         for(let i = 0; i < items.length; i++) {
-          const item = items[i].webkitGetAsEntry()
-          if(item)
-            files.push(...await traverseFileTree(item))
+          const entry = items[i].webkitGetAsEntry(), item = items[i].getAsFile()
+          if(entry) {
+            const _files = await traverseFileTree(entry, path)
+            _files.forEach(file => {
+              files.push(file)
+            })
+          } else if(item) {
+            files.push(new File(item.name, path, item.type))
+          }
         }
-        console.log('拖拽文件', items.length, files.length)
         files.forEach(file => {
           file.path = path + file.path
-          this.$store.commit('addUploadFile', { id: this.id, user: this.user, path: this.file.path, file })
+          file.type = FileType.Normal
+
+          console.log('drop file 新文件', file.path, file.name)
+          const index = findIndex(this.files, { path: file.path, name: file.name })
+          if(index > -1) {
+            this.$confirm(`${file.name} 已经存在，是否覆盖？`).then(() => {
+              this.$store.commit('uploadFile', { id: this.id, path: this.file.path, file })
+            }).catch(() => {})
+          } else
+            this.$store.commit('uploadFile', { id: this.id, path: this.file.path, file })
         })
       },
       open(file) {
@@ -156,17 +221,14 @@
         path += '/children?expand=thumbnails'
 
         const { data } = await this.$store.dispatch('load', { user: this.user, path, force })
-        this.files = data.value.map(file => {
-          const path = join(this.file.path, file.name)
-          const mimeType = file.file ? file.file.mimeType : null
-          const _file = new File(file.name, path, mimeType)
-          if(_file.type === FileType.Image)
-            _file.thumbnail = file.thumbnails[0]['small']['url']
-          return _file
+        this.files = data.value.map(data => {
+          const path = join(this.file.path, data.name)
+          const file = new File(data.name, path)
+          file.state = FileState.Normal
+          file.setFromData(data)
+          file.setType()
+          return file
         })
-      },
-      cancelUpload(file) {
-        this.$store.commit('cancelUploadFile', { user: this.user, path: this.file.path, file })
       },
       removeFile(file) {
         const index = this.files.indexOf(file)
@@ -174,7 +236,21 @@
           this.files.splice(index, 1)
       },
       fileUploaded(file) {
+        const index = findIndex(this.files, { name: file.name })
+        if(index > -1)
+          this.files.splice(index, 1)
+
         this.files.push(file)
+      },
+      clearWaiting() {
+        this.$confirm('确认清空等待上传的任务？').then(() => {
+          this.$store.commit('clearUploadingFile', FileState.Waiting)
+        }).catch(() => {})
+      },
+      clearUploadFail() {
+        this.$confirm('确认清空上传失败的任务？').then(() => {
+          this.$store.commit('clearUploadingFile', FileState.UploadFail)
+        }).catch(() => {})
       },
     },
     mounted() {

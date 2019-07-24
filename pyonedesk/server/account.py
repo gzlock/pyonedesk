@@ -217,6 +217,8 @@ class Account:
             url += '/root'
         elif path == '/':
             url += 'root'
+        elif path.startswith('/items/'):
+            url += path
         else:
             url += '/root' + path
 

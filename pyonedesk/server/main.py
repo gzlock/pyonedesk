@@ -40,4 +40,4 @@ def server(obj, port: int, password: str):
 
     loop_task.main(cache=cache)
 
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, workers=4)

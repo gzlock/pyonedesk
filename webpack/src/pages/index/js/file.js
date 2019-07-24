@@ -1,3 +1,5 @@
+import { get } from 'lodash'
+
 export const FileType = Object.freeze({
   Normal: Symbol('normal'),
   Image: Symbol('image'),
@@ -17,6 +19,7 @@ export const FileState = Object.freeze({
   Uploading: Symbol('uploading'),//上传文件中
   Waiting: Symbol('waiting'),//上传文件队列等待
   Deleting: Symbol('deleting'),//正在删除文件
+  UploadFail: Symbol('uploadFail'),//上传失败
 })
 
 // https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Complete_list_of_MIME_types
@@ -75,35 +78,46 @@ const codeFormats = [
 ]
 
 export class File {
-  constructor(name, path, mimeType, thumbnail) {
+  constructor(name, path, mimeType) {
     this.name = name
     this.mimeType = mimeType
-    this.state = FileState.Normal
-    if(!mimeType)
+    this.path = path
+    this.thumbnail = null
+    this.setType()
+  }
+
+  setType() {
+    if(!this.mimeType)
       this.type = FileType.Folder
-    else if(mimeType.indexOf('image/') !== -1)
+    else if(this.mimeType.indexOf('image/') !== -1)
       this.type = FileType.Image
-    else if(mimeType.indexOf('audio/') !== -1)
+    else if(this.mimeType.indexOf('audio/') !== -1)
       this.type = FileType.Audio
-    else if(mimeType.indexOf('video/') !== -1)
+    else if(this.mimeType.indexOf('video/') !== -1)
       this.type = FileType.Video
     else if(fileNameToType(name, codeFormats))
       this.type = FileType.Code
-    else if(wordMimeType.indexOf(mimeType) !== -1)
+    else if(wordMimeType.indexOf(this.mimeType) !== -1)
       this.type = FileType.Word
-    else if(excelMimeType.indexOf(mimeType) !== -1)
+    else if(excelMimeType.indexOf(this.mimeType) !== -1)
       this.type = FileType.Excel
-    else if(pptMimeType.indexOf(mimeType) !== -1)
+    else if(pptMimeType.indexOf(this.mimeType) !== -1)
       this.type = FileType.PPT
-    else if(zipMimeType.indexOf(mimeType) !== -1)
+    else if(zipMimeType.indexOf(this.mimeType) !== -1)
       this.type = FileType.Zip
-    else if(mimeType === 'text/plain')
+    else if(this.mimeType === 'text/plain')
       this.type = FileType.Text
-    else if(mimeType === 'application/pdf')
+    else if(this.mimeType === 'application/pdf')
       this.type = FileType.PDF
     else
       this.type = FileType.Normal
-    this.path = path
-    this.thumbnail = thumbnail
+  }
+
+  setFromData(data) {
+    const thumbnail = get(data, 'thumbnails[0].small.url')
+    if(thumbnail) {
+      this.thumbnail = thumbnail
+    }
+    this.mimeType = get(data, 'file.mimeType')
   }
 }

@@ -57,7 +57,6 @@ setup(
         'progress',
         'pycrypto',
         'shortuuid',
-        'colorama',
         'appdirs',
     ],
     entry_points={'console_scripts': ['pyonedesk = pyonedesk.main:main']},

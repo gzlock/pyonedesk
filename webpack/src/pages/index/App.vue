@@ -32,6 +32,7 @@
     },
     methods: {},
     async beforeMount() {
+      this.$store.commit('setVueInstance', this)
       const res = await this.$store.dispatch('api', { url: Index.accounts })
       this.users.length = 0
       for(let key in res.data) {

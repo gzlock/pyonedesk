@@ -2,7 +2,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import { Index } from '../index/preset'
 import { API } from '../admin/preset'
-import { sortBy } from 'lodash'
+import { findIndex, sortBy } from 'lodash'
 import queue from 'async/queue'
 import { FileState } from './js/file'
 import { Window, WindowEvent } from './js/window'
@@ -11,26 +11,34 @@ const axios = require('axios')
 
 Vue.use(Vuex)
 
+//文件上传队列
 const uploadQueue = queue(
-  ({ user, file }, cb) => {
+  (data, cb) => {
+    const { user, file } = data
+    file.state = data.state = FileState.Uploading
     const formData = new FormData(),
-      url = API.uploadFile + '/' + user.id + '?type=file&path=' + file.path
-    file.state = FileState.Uploading
+      url = API.uploadFile + '/' + user.id + '?type=file&path=' + file.path +
+        '/' + file.name
     formData.append('file', file.file)
     axios({
         method: 'post',
         url, data: formData, headers: { 'Content-Type': 'multipart/form-data' },
       },
     ).then(res => {
-      console.log('SUCCESS!!', res)
-      // res.data['file']['mimeType']
-      cb && cb()
-    }).catch(() => {
-      console.log('FAILURE!!')
-      cb && cb()
+      console.log('SUCCESS!!', res.data)
+      file.setFromData(res.data)
+      file.setType()
+      $vue.$notify.success({ title: '上传成功', message: file.name })
+      cb && cb(true)
+    }).catch(err => {
+      console.log('FAILURE!!', err.response)
+      file.reason = err.response.data
+      $vue.$notify.error({ title: '上传失败', message: file.name })
+      cb && cb(false)
     })
-  }, 1)
+  }, 5)
 
+let $vue
 export default new Vuex.Store({
   state: {
     z: 1,// windows窗口的z-index值
@@ -40,19 +48,37 @@ export default new Vuex.Store({
     activeID: null,//活跃的窗口id
     error: null,
     cache: {},// 文件夹数据缓存
-    uploading: {},//上传文件队列
-    uploadingLength: 0,
+    uploading: [],//上传文件队列
+    uploadingLength: 0,//用于阻止用户刷新网页
+    uploadQueueConcurrency: uploadQueue.concurrency,
   },
   getters: {
     getUploading: state => (user, path, fileState = FileState.Uploading) => {
-      console.log('getters getUploading', user, path, fileState)
-      if(state.uploading[user.id] && state.uploading[user.id][path])
-        return state.uploading[user.id][path].filter(
-          file => file.state === fileState)
-      return []
+      /*console.log('getters getUploading', user, path, fileState,
+        state.uploading.length)*/
+      return state.uploading.filter(data => {
+        return data.user === user && data.path === path && data.state ===
+          fileState
+      })
     },
+    getUploadingDataByFile: state => (file) => {
+      const index = findIndex(state.uploading, ['file', file])
+      if(index > -1)
+        return state.uploading[index]
+      else
+        return null
+    },
+    getUploadQueueConcurrency(state) {return state.uploadQueueConcurrency},
   },
   mutations: {
+    setVueInstance(state, vue) {
+      $vue = vue
+    },
+    setUploadQueueConcurrency(state, count) {
+      state.uploadQueueConcurrency = count
+      uploadQueue.concurrency = count
+      console.log('改变后', uploadQueue.concurrency)
+    },
     setError(state, response, title = '错误') {
       state.error = { title: title, content: response.data }
     },
@@ -127,41 +153,50 @@ export default new Vuex.Store({
       })
       state.z = sorted.length + 1
     },
-    addUploadFile(state, { id, user, path, file }) {
-      if(!state.uploading[user.id])
-        Vue.set(state.uploading, user.id, {})
-      if(!state.uploading[user.id][path])
-        Vue.set(state.uploading[user.id], path, [])
-      state.uploading[user.id][path].push(file)
-      file.state = FileState.Waiting
-      state.uploadingLength++
-      uploadQueue.push({ user, file }, () => {
-        console.log('上传完成', file.path)
-        state.uploadingLength--
-        file.state = FileState.Normal
-        state.windows[id].trigger(WindowEvent.FileUploaded, file)
+    /**
+     *
+     * @param state
+     * @param id
+     * @param path
+     * @param file
+     */
+    uploadFile(state, { id, path, file }) {
+      const user = state.windows[id].user
+      const data = { id, user, path, file, state: FileState.Waiting }
+      this.commit('uploadQueuePush', data)
+    },
+    cancelUploadFile(state, file) {
+      const index = this.getters.getUploadingDataByFile(file)
+      if(index > -1) {
+        state.uploading.splice(index, 1)
+      }
+    },
+    uploadQueuePush(state, data) {
+      const { id, file } = data
+      const index = state.uploading.indexOf(data)
+      if(index > -1)
+        state.uploading.splice(index, 1)
+      state.uploading.push(data)
+      file.state = data.state = FileState.Waiting
+      uploadQueue.push(data, result => {
+        console.log('上传结果', file.path, result)
+        const index = state.uploading.indexOf(data)
+        if(index > -1)
+          state.uploading.splice(index, 1)
+        if(result) {
+          //上传成功
+          file.state = FileState.Normal
+          state.windows[id].trigger(WindowEvent.FileUploaded, file)
+        } else {
+          //上传失败
+          file.state = data.state = FileState.UploadFail
+          state.uploading.push(data)
+        }
       })
     },
-    cancelUploadFile(state, { user, path, file }) {
-      if(state.uploading[user.id] && state.uploading[user.id][path]) {
-        const index = state.uploading[user.id][path].indexOf(file)
-        if(index > -1) {
-          state.uploading[user.id][path].splice(index, 1)
-          state.uploadingLength--
-        }
-      }
-    },
-    cancelUploadByFile(state, { user, file }) {
-      if(state.uploading[user.id]) {
-        const paths = Object.values(state.uploading[user.id])
-        for(let i = 0; i < paths.length; i++) {
-          const index = paths[i].indexOf(file)
-          if(index > -1) {
-            paths[i].splice(index, 1)
-            break
-          }
-        }
-      }
+    clearUploadingFile(state, fileState) {
+      state.uploading = state.uploading.filter(
+        ({ file }) => file.state !== fileState)
     },
   },
   actions: {

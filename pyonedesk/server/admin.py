@@ -337,9 +337,10 @@ async def upload_file(request, user_id: str):
         path = '/' + path
 
     upload_url = account.get_upload_url(path=path, behavior='replace')
-    print('上传url', upload_url)
+    # print('上传url', upload_url)
     try:
         res = upload(upload_url, content)
+        res = account.get_item(path='/items/{}?expand=thumbnails'.format(res['id']))
         return response.json(res)
     except Exception as e:
         raise ServerError(e)

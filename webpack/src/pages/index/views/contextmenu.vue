@@ -52,14 +52,15 @@
           this.list.push({
             name: '删除文件',
             click: async() => {
-              if(!confirm(`确认删除文件 ${this.file.name} ?`))
-                return
-              const win = this.$store.state.windows[this.id]
-              const user = win.user
-              const res = await this.$http(
-                { method: 'delete', url: '/admin/api/' + user.id + '?path=' + this.file.path })
-              if(res.status === 200)
-                win.trigger(WindowEvent.FileDeleted, this.file)
+              this.$confirm(`确认删除文件 ${this.file.name} ?`).then(async() => {
+                const win = this.$store.state.windows[this.id]
+                const user = win.user
+                const res = await this.$http(
+                  { method: 'delete', url: '/admin/api/' + user.id + '?path=' + this.file.path })
+                this.$notify.success(`成功删除 ${this.file.name}`)
+                if(res.status === 200)
+                  win.trigger(WindowEvent.FileDeleted, this.file)
+              }).catch(() => {})
             },
           })
         }

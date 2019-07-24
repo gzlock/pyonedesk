@@ -1,6 +1,6 @@
 <template>
     <div class="file" @dblclick="open"
-         @contextmenu.prevent="contextmenu" @click="cancelUpload">
+         @contextmenu.prevent="contextmenu" @click="click">
         <div class="file-icon" :class="{uploading:isUploading||isWaiting}">
             <img :src="file.thumbnail" v-if="image"/>
             <svg class="icon file-icon" aria-hidden="true" v-else>
@@ -21,8 +21,10 @@
                 </div>
             </div>
         </div>
-        <div class="file-name">{{file.name}}</div>
-        <div class="file-name-full">{{file.name}}</div>
+        <div class="file-name">
+            <div class="file-name__ellipsis">{{file.name}}</div>
+            <div class="file-name__full">{{file.name}}</div>
+        </div>
     </div>
 </template>
 
@@ -30,7 +32,7 @@
   import { File, FileState, FileType } from '../js/file'
 
   export default {
-    props: { id: String, file: File },
+    props: { id: String, parent: File, file: File },
     data() {
       return {
         image: null,
@@ -74,9 +76,13 @@
       isWaiting() {
         return this.file.state === FileState.Waiting
       },
+      isUploadFail() {
+        return this.file.state === FileState.UploadFail
+      },
     },
     methods: {
       open() {
+        console.log('open', this.file)
         if(this.file.state === FileState.Normal)
           this.$emit('dblclick', this.file)
       },
@@ -84,26 +90,45 @@
         // 添加额外的右键菜单
         if(this.isWaiting || this.isUploading)
           this.$store.commit('appendMenuItem', {
-            name: '取消上传', click: this.cancelUpload,
+            name: '取消上传', click: this.click,
           })
         this.$store.commit('contextmenu', { e, id: this.id, file: this.file })
       },
-      cancelUpload() {
+      click() {
         if(this.isNormal || this.isUploading)
           return
-        if(confirm(`取消上传 ${this.file.name} ?`)) {
-          const user = this.$store.state.windows[this.id].user
-          this.$store.commit('cancelUploadByFile', { user, file: this.file })
+        console.log('file click', { isWaiting: this.isWaiting, isUploadFail: this.isUploadFail })
+        if(this.isWaiting) {
+          this.$confirm(`取消上传 ${this.file.name} ？`).then(() => {
+            this.$store.commit('cancelUploadFile', this.file)
+          }).catch(() => {})
+        } else if(this.isUploadFail) {
+          const reason = this.file.reason || ''
+          this.$confirm(`上传失败原因：${reason}`, `再次尝试上传 ${this.file.name} ？`).then(() => {
+            const data = this.$store.getters.getUploadingDataByFile(this.file)
+            if(data) {
+              this.$store.commit('uploadQueuePush', data)
+            }
+          }).catch(() => {})
+        }
+      },
+      loadThumbnail() {
+
+        this.image = null
+        if(this.file.state === FileState.Normal && this.file.type === FileType.Image && this.file.thumbnail) {
+          const img = new Image()
+          img.src = this.file.thumbnail
+          img.addEventListener('load', () => {this.image = this.file.thumbnail})
         }
       },
     },
+    watch: {
+      file() {
+        this.loadThumbnail()
+      },
+    },
     mounted() {
-      this.image = null
-      if(this.file.type === FileType.Image) {
-        const img = new Image()
-        img.src = this.file.thumbnail
-        img.addEventListener('load', () => {this.image = this.file.thumbnail})
-      }
+      this.loadThumbnail()
     },
   }
 </script>
@@ -111,19 +136,22 @@
 <style scoped lang="scss">
     .file {
         width: 100px;
-        padding: 8px 0 0 2px;
+        padding: 8px 0 0 0;
         position: relative;
+        border-radius: 8px;
 
         &:hover {
             background: #E9EEF3;
 
-            .file-name-full {
-                position: absolute;
-                display: block;
-            }
 
             .file-name {
-                display: none;
+                .file-name__ellipsis {
+                }
+
+                .file-name__full {
+                    position: absolute;
+                    display: block;
+                }
             }
         }
 
@@ -172,27 +200,33 @@
 
         }
 
+
         .file-name {
-            width: 100px;
-            text-overflow: ellipsis;
-            overflow: hidden;
-            white-space: nowrap;
-        }
+            position: relative;
 
-        .file-name, .file-name-full {
-            font-size: 14px;
-            text-align: center;
-        }
+            .file-name__ellipsis, .file-name__full {
+                font-size: 14px;
+                text-align: center;
+            }
 
-        .file-name-full {
-            width: 100px;
-            display: none;
-            white-space: pre-wrap;
-            word-break: break-all;
-            background: #E9EEF3;
-            left: 0;
-            padding-left: 2px;
-            z-index: 1;
+            .file-name__ellipsis {
+                width: 100px;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                white-space: nowrap;
+            }
+
+            .file-name__full {
+                width: 100px;
+                display: none;
+                white-space: pre-wrap;
+                word-break: break-word;
+                background: #E9EEF3;
+                left: 0;
+                top: 0;
+                z-index: 1;
+                border-radius: 0 0 8px 8px;
+            }
         }
     }
 </style>

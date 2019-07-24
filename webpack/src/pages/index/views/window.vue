@@ -1,5 +1,5 @@
 <template>
-    <div class="window" :class="{active:$store.state.activeID === id,dragging}" @focus="focus" :style="{'z-index':z}"
+    <div class="window" :class="{active:$store.state.activeID === id,dragging,loading}" @focus="focus" :style="{'z-index':z}"
          :tabindex="z" @blur="blur">
         <div class="window--head">
             <div class="name"> {{current.name}}</div>
@@ -196,6 +196,12 @@
 
         &.active {
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        &.loading {
+            .window--body {
+                overflow: hidden;
+            }
         }
 
         .window--head {
