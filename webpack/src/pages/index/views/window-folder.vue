@@ -69,7 +69,7 @@
       // Get file
       await new Promise(resolve => {
         file.file(f => {
-          const file = new File(f.name, f.type)
+          const file = new File(f.name, path + '/' + f.name, f.type)
           file.file = f
           files.push(file)
           resolve()
@@ -197,10 +197,9 @@
           }
         }
         files.forEach(file => {
-          file.path = path + file.path
           file.type = FileType.Normal
 
-          console.log('drop file 新文件', file.path, file.name)
+          console.log('drop file 新文件', file.path)
           const index = findIndex(this.files, { path: file.path, name: file.name })
           if(index > -1) {
             this.$confirm(`${file.name} 已经存在，是否覆盖？`).then(() => {

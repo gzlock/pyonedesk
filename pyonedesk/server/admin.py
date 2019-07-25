@@ -96,7 +96,7 @@ async def check_token(request):
         if path == '/admin':
             response.redirect(admin.url_prefix + '/login')
         elif path.startswith(admin_api.url_prefix):
-            raise Forbidden('请登录')
+            raise Forbidden('没有管理权限')
 
 
 @admin_api.get('/accounts')
@@ -317,13 +317,13 @@ async def upload_file(request, user_id: str):
         raise NotFound('不存在的账号别名')
     path = request.raw_args.get('path')
     if path is None:
-        raise ServerError('参数path是必须的')
+        ServerError('参数path是必须的')
     if path == '/':
-        raise ServerError('path参数不能是/')
+        ServerError('path参数不能是/')
 
     content_type = request.raw_args.get('type')
     if content_type is None or content_type not in ['text', 'file']:
-        raise ServerError('参数type是必须的，有text和file两种值')
+        ServerError('参数type是必须的，有text和file两种值')
 
     if content_type == 'file':
         content = request.files.get('file')
@@ -343,7 +343,7 @@ async def upload_file(request, user_id: str):
         res = account.get_item(path='/items/{}?expand=thumbnails'.format(res['id']))
         return response.json(res)
     except Exception as e:
-        raise ServerError(e)
+        ServerError(e)
 
 
 @admin_api.delete('/<user_id:string>')

@@ -28,12 +28,14 @@ const uploadQueue = queue(
       console.log('SUCCESS!!', res.data)
       file.setFromData(res.data)
       file.setType()
+      //显示通知
       $vue.$notify.success({ title: '上传成功', message: file.name })
       cb && cb(true)
     }).catch(err => {
       console.log('FAILURE!!', err.response)
       file.reason = err.response.data
-      $vue.$notify.error({ title: '上传失败', message: file.name })
+      //显示通知
+      $vue.$notify.error({ title: '上传失败：' + file.name, message: file.reason })
       cb && cb(false)
     })
   }, 5)
@@ -197,6 +199,10 @@ export default new Vuex.Store({
     clearUploadingFile(state, fileState) {
       state.uploading = state.uploading.filter(
         ({ file }) => file.state !== fileState)
+    },
+    deleteCache(state, { user, path }) {
+      const url = Index.loadFile + '/' + user.id + '?path=' + path
+      delete state.cache[url]
     },
   },
   actions: {

@@ -45,19 +45,29 @@
           this.$cm.setOption('mode', 'text/plain')
         }
       },
-      async save() {
+      /**
+       * 删除这个文件的缓存
+       */
+      deleteCache() {
+        this.$store.commit('deleteCache', { user: this.user, path: ':' + this.file.path })
+      },
+      save() {
         if(this.loading || this.saving)
           return
+
         this.saving = true
-        await this.$http({
+        this.$http({
           method: 'post',
           url: '/admin/api/upload/' + this.user.id,
           params: { path: this.file.path, type: 'text' },
           data: this.$cm.getValue(),
+        }).then(() => {
+          this.deleteCache()
+        }).catch(err => {
+          this.$notify.error(`${this.file.name} 保存失败：${err.response.data}`)
+        }).finally(() => {
+          this.saving = false
         })
-        // todo 需要处理 没有权限 的情况
-        // await Wait(2000)
-        this.saving = false
       },
     },
     mounted() {

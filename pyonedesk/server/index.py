@@ -90,7 +90,7 @@ async def accounts(request):
 async def accounts(request, user_id: str):
     account: Account = Account.get_by_id(user_id)
     if account is None:
-        raise NotFound('不存在的账号别名')
+        raise NotFound('不存在的账号')
     path = request.raw_args.get('path')
     if path is None:
         path = '/'
@@ -100,3 +100,17 @@ async def accounts(request, user_id: str):
     if isinstance(data, dict):
         return response.json(data)
     return response.raw(body=data)
+
+
+@index.get('/download/<user_id:string>')
+async def accounts(request, user_id: str):
+    account: Account = Account.get_by_id(user_id)
+    if account is None:
+        raise NotFound('不存在的账号')
+    path: str = request.raw_args.get('path')
+    if path is None or path.startswith(':/') is False:
+        raise ServerError('path参数不正确')
+    data = account.get_item(path=path)
+    if '@microsoft.graph.downloadUrl' in data:
+        return response.redirect(data['@microsoft.graph.downloadUrl'])
+    return ServerError('不支持下载整个文件夹')

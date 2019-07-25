@@ -2,6 +2,8 @@
 import os
 
 from sanic import Sanic
+from sanic.exceptions import NotFound, ServerError, Forbidden
+from sanic.response import text
 from shortuuid import ShortUUID
 
 from . import loop_task
@@ -26,6 +28,18 @@ def server(obj, port: int, password: str):
     @app.listener('before_server_start')
     async def setup_db(app, loop):
         app.cache = cache
+
+    @app.exception(Forbidden)
+    async def _403(request, exception):
+        return text(exception, status=403)
+
+    @app.exception(NotFound)
+    async def _404(request, exception):
+        return text(exception, status=404)
+
+    @app.exception(ServerError)
+    async def _500(request, exception):
+        return text(exception, status=500)
 
     app.blueprint(index)
     app.blueprint(admin)

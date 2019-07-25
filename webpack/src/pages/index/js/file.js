@@ -81,7 +81,8 @@ export class File {
   constructor(name, path, mimeType) {
     this.name = name
     this.mimeType = mimeType
-    this.path = path
+    this.path = path.replace(/\/+/g, '/')
+    console.log('file', path, this.path)
     this.thumbnail = null
     this.setType()
   }
