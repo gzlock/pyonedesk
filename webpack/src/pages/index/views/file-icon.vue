@@ -2,7 +2,7 @@
     <div class="file" @dblclick="open"
          @contextmenu.prevent="contextmenu" @click="click">
         <div class="file-icon" :class="{uploading:isUploading||isWaiting}">
-            <img :src="file.thumbnail" v-if="image"/>
+            <img :src="file.thumbnail" v-if="image" alt="图片"/>
             <svg class="icon file-icon" aria-hidden="true" v-else>
                 <use :xlink:href="'#'+icon"></use>
             </svg>
@@ -113,7 +113,6 @@
         }
       },
       loadThumbnail() {
-
         this.image = null
         if(this.file.state === FileState.Normal && this.file.type === FileType.Image && this.file.thumbnail) {
           const img = new Image()
