@@ -10,6 +10,7 @@
 <script>
   import { FileState, FileType } from '../js/file'
   import { WindowEvent } from '../js/window'
+  import { join } from 'path'
 
   export default {
     name: 'contextmenu',
@@ -45,7 +46,7 @@
             this.list.push({
               name: '下载文件',
               click: () => {
-                window.open(`/download/${user.id}?path=:${this.file.path}`)
+                window.open(`/download/${user.id}?path=:${join(this.file.path, this.file.name)}`)
               },
             })
           }
@@ -54,7 +55,8 @@
             name: '删除文件',
             click: async() => {
               this.$confirm(`确认删除文件 ${this.file.name} ?`).then(() => {
-                this.$http({ method: 'delete', url: `/admin/api/${user.id}?path=${this.file.path}` }).
+                this.$http(
+                  { method: 'delete', url: `/admin/api/${user.id}?path=${join(this.file.path, this.file.name)}` }).
                   then(() => {
                     this.$notify.success(`成功删除 ${this.file.name}`)
                     win.trigger(WindowEvent.FileDeleted, this.file)
