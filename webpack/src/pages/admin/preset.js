@@ -11,4 +11,5 @@ export const API = {
   goGetCode: prefix + '/go_get_code',
   stylizes: prefix + '/stylizes',
   uploadFile: prefix + '/upload',
+  createFolder: prefix + '/create_folder',
 }

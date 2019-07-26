@@ -9,6 +9,7 @@
 
 <script>
   import WindowBaeContent from './window-base-content'
+  import { join } from 'path'
 
   export default {
     extends: WindowBaeContent,
@@ -22,7 +23,7 @@
     },
     methods: {
       async loadContent(force = false) {
-        const path = ':' + this.file.path
+        const path = ':' + join(this.file.path, this.file.name)
         const { data: msData } = await this.$store.dispatch('load', { force, user: this.user, path })
         // console.log('读取文本OD数据', msData)
         const { data: txtData } = await this.$http.get(msData['@microsoft.graph.downloadUrl'])
@@ -59,7 +60,7 @@
         this.$http({
           method: 'post',
           url: '/admin/api/upload/' + this.user.id,
-          params: { path: this.file.path, type: 'text' },
+          params: { path: join(this.file.path, this.file.name), type: 'text' },
           data: this.$cm.getValue(),
         }).then(() => {
           this.deleteCache()

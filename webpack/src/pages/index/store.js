@@ -6,6 +6,7 @@ import { findIndex, sortBy } from 'lodash'
 import queue from 'async/queue'
 import { FileState } from './js/file'
 import { Window, WindowEvent } from './js/window'
+import { join } from 'path'
 
 const axios = require('axios')
 
@@ -17,31 +18,30 @@ const uploadQueue = queue(
     const { user, file } = data
     file.state = data.state = FileState.Uploading
     const formData = new FormData(),
-      url = API.uploadFile + '/' + user.id + '?type=file&path=' + file.path +
-        '/' + file.name
+      url = join(API.uploadFile, user.id) + '?type=file&path=' +
+        join(file.path, file.name)
     formData.append('file', file.file)
     axios({
         method: 'post',
         url, data: formData, headers: { 'Content-Type': 'multipart/form-data' },
       },
-    ).then(res => {
-      console.log('SUCCESS!!', res.data)
-      file.setFromData(res.data)
+    ).then(({ data }) => {
+      console.log('SUCCESS!!')
+      file.setFromData(data)
       file.setType()
       //显示通知
       $vue.$notify.success({ title: '上传成功', message: file.name })
       cb && cb(true)
-    }).catch(err => {
-      console.log('FAILURE!!', err.response)
-      file.reason = err.response.data
+    }).catch(({ response }) => {
+      console.log('FAILURE!!', response)
+      file.reason = response.data
       //显示通知
       $vue.$notify.error({ title: '上传失败：' + file.name, message: file.reason })
       cb && cb(false)
     })
   }, 5)
-
 let $vue
-export default new Vuex.Store({
+const $store = new Vuex.Store({
   state: {
     z: 1,// windows窗口的z-index值
     windows: {},
@@ -53,6 +53,7 @@ export default new Vuex.Store({
     uploading: [],//上传文件队列
     uploadingLength: 0,//用于阻止用户刷新网页
     uploadQueueConcurrency: uploadQueue.concurrency,
+    settings: false,//是否显示全局设置
   },
   getters: {
     getUploading: state => (user, path, fileState = FileState.Uploading) => {
@@ -168,9 +169,13 @@ export default new Vuex.Store({
       this.commit('uploadQueuePush', data)
     },
     cancelUploadFile(state, file) {
-      const index = this.getters.getUploadingDataByFile(file)
+      const index = findIndex(state.uploading, ['file', file])
       if(index > -1) {
         state.uploading.splice(index, 1)
+        uploadQueue.remove(({ data }) => {
+          // console.log('上传队列 remove', data)
+          return data.file === file
+        })
       }
     },
     uploadQueuePush(state, data) {
@@ -199,6 +204,7 @@ export default new Vuex.Store({
     clearUploadingFile(state, fileState) {
       state.uploading = state.uploading.filter(
         ({ file }) => file.state !== fileState)
+      uploadQueue.kill()
     },
     deleteCache(state, { user, path }) {
       const url = Index.loadFile + '/' + user.id + '?path=' + path
@@ -224,7 +230,8 @@ export default new Vuex.Store({
      * @returns {Promise<*>}
      */
     async load(context, { user, path, force = false }) {
-      const url = Index.loadFile + '/' + user.id + '?path=' + path
+      const url = Index.loadFile + '/' + user.id + '?path=' +
+        encodeURIComponent(path)
       console.log('load', url, force)
       if(!!context.state.cache[url] && !force) {
         // console.log('有缓存')
@@ -237,3 +244,5 @@ export default new Vuex.Store({
     },
   },
 })
+
+export default $store

@@ -46,6 +46,7 @@ const zipMimeType = [
 ]
 
 function fileNameToType(name, list) {
+  console.log('fileNameToType', name)
   for(let i = 0; i < list.length; i++) {
     if(name.lastIndexOf(list[i]) !== -1)
       return true
@@ -82,36 +83,41 @@ export class File {
     this.name = name
     this.mimeType = mimeType
     this.path = path.replace(/\/+/g, '/')
-    console.log('file', path, this.path)
+    // console.log('file', path, this.path)
     this.thumbnail = null
-    this.setType()
+    this.id = null
   }
 
-  setType() {
-    if(!this.mimeType)
-      this.type = FileType.Folder
-    else if(this.mimeType.indexOf('image/') !== -1)
-      this.type = FileType.Image
-    else if(this.mimeType.indexOf('audio/') !== -1)
-      this.type = FileType.Audio
-    else if(this.mimeType.indexOf('video/') !== -1)
-      this.type = FileType.Video
-    else if(fileNameToType(name, codeFormats))
-      this.type = FileType.Code
-    else if(wordMimeType.indexOf(this.mimeType) !== -1)
-      this.type = FileType.Word
-    else if(excelMimeType.indexOf(this.mimeType) !== -1)
-      this.type = FileType.Excel
-    else if(pptMimeType.indexOf(this.mimeType) !== -1)
-      this.type = FileType.PPT
-    else if(zipMimeType.indexOf(this.mimeType) !== -1)
-      this.type = FileType.Zip
-    else if(this.mimeType === 'text/plain')
-      this.type = FileType.Text
-    else if(this.mimeType === 'application/pdf')
-      this.type = FileType.PDF
-    else
-      this.type = FileType.Normal
+  setType(type = null) {
+    if(type) {
+      this.type = type
+    } else {
+      if(!this.mimeType)
+        this.type = FileType.Folder
+      else if(this.mimeType.indexOf('image/') !== -1)
+        this.type = FileType.Image
+      else if(this.mimeType.indexOf('audio/') !== -1)
+        this.type = FileType.Audio
+      else if(this.mimeType.indexOf('video/') !== -1)
+        this.type = FileType.Video
+      else if(fileNameToType(this.name, codeFormats))
+        this.type = FileType.Code
+      else if(wordMimeType.indexOf(this.mimeType) !== -1)
+        this.type = FileType.Word
+      else if(excelMimeType.indexOf(this.mimeType) !== -1)
+        this.type = FileType.Excel
+      else if(pptMimeType.indexOf(this.mimeType) !== -1)
+        this.type = FileType.PPT
+      else if(zipMimeType.indexOf(this.mimeType) !== -1)
+        this.type = FileType.Zip
+      else if(this.mimeType === 'text/plain')
+        this.type = FileType.Text
+      else if(this.mimeType === 'application/pdf')
+        this.type = FileType.PDF
+      else
+        this.type = FileType.Normal
+    }
+    return this
   }
 
   setFromData(data) {
@@ -119,6 +125,17 @@ export class File {
     if(thumbnail) {
       this.thumbnail = thumbnail
     }
+    this.id = data.id
     this.mimeType = get(data, 'file.mimeType')
+    if(data['parentReference'])
+      this.path = data['parentReference']['path'] === '/drive/root:'
+        ? '/'
+        : data['parentReference']['path'].replace('/drive/root:', '/')
+    return this
+  }
+
+  setState(state) {
+    this.state = state
+    return this
   }
 }

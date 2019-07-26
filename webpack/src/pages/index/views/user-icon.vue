@@ -25,7 +25,7 @@
     },
     methods: {
       open() {
-        this.$store.commit('createWindow', { user: this.user, file: new File('/', '/'), active: true })
+        this.$store.commit('createWindow', { user: this.user, file: new File('/', '/').setType(), active: true })
       },
     },
   }

@@ -5,6 +5,7 @@
 
 <script>
   import WindowBaeContent from './window-base-content'
+  import { join } from 'path'
 
   export default {
     extends: WindowBaeContent,
@@ -16,7 +17,7 @@
     methods: {
       async loadContent(force) {
         console.log('player mounted')
-        const path = `:${this.file.path}`
+        const path = ':' + join(this.file.path, this.file.name)
         const { data } = await this.$store.dispatch('load', { user: this.user, path, force })
         console.log('player', path, data)
         new DPlayer({

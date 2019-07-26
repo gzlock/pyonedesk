@@ -92,6 +92,7 @@ async def accounts(request, user_id: str):
     if account is None:
         raise NotFound('不存在的账号')
     path = request.raw_args.get('path')
+    # print('读取', request.raw_args)
     if path is None:
         path = '/'
     elif ':/content' in path:

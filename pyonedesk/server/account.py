@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import time
+import urllib.parse
 from typing import Optional, Dict
 
 import requests
@@ -239,6 +240,21 @@ class Account:
         res = requests.get(url, headers=make_header(self.token.get('access_token')))
         # print('quota', res.json())
         return res.json()['quota']
+
+    def create_folder(self, path: str, name: str,
+                      url: str = 'https://graph.microsoft.com/v1.0/me/drive'):
+        headers = make_header(self.token.get('access_token'))
+        headers.update({'Content-Type': 'application/json'})
+        if not path.endswith('/'):
+            path += '/'
+        path = urllib.parse.urljoin(path, 'children')
+        url = url + path
+
+        print('创建文件夹', path, url)
+        data = {'name': name,
+                'folder': {},
+                '@microsoft.graph.conflictBehavior': 'replace'}
+        return requests.post(url, headers=headers, data=json.dumps(data)).json()
 
 
 def make_header(token: str) -> dict:

@@ -1,5 +1,6 @@
 <template>
-    <div class="window" :class="{active:$store.state.activeID === id,dragging,loading}" @focus="focus" :style="{'z-index':z}"
+    <div class="window" :class="{active:$store.state.activeID === id,dragging,loading}" @focus="focus"
+         :style="{'z-index':z}"
          :tabindex="z" @blur="blur">
         <div class="window--head">
             <div class="name"> {{current.name}}</div>
@@ -22,11 +23,24 @@
             </div>
         </div>
         <div class="window--path">
-            <div class="path">
-                路径：{{user.name}}{{current.path}}
-            </div>
+            <el-breadcrumb separator="/" class="path">
+                <el-breadcrumb-item></el-breadcrumb-item>
+                <el-breadcrumb-item v-for="(file,i) in path" :key="i">
+                    <a @click="go(-(path.length - i - 1))">{{file}}</a>
+                </el-breadcrumb-item>
+            </el-breadcrumb>
 
             <div class="controller" v-if="loading === false && showFolder">
+                <el-dropdown @command="create" size="mini" trigger="click">
+                  <span class="el-dropdown-link">
+                    创建<i class="el-icon-arrow-down el-icon--right"></i>
+                  </span>
+                    <el-dropdown-menu slot="dropdown">
+                        <el-dropdown-item command="folder">文件夹</el-dropdown-item>
+                        <el-dropdown-item divided></el-dropdown-item>
+                        <el-dropdown-item command="text">文本文件</el-dropdown-item>
+                    </el-dropdown-menu>
+                </el-dropdown>
                 <div @click="upload('file')">
                     <svg class="icon" aria-hidden="true" :class="{disabled:loading}">
                         <use xlink:href="#py_shangchuan1"></use>
@@ -43,19 +57,23 @@
         </div>
         <div class="window--body" v-show="!dragging" :class="{loading:loading}">
             <window-loading v-if="loading"/>
+            <window-error v-if="error" :error="error"/>
             <template v-show="!loading">
                 <template v-if="showFolder">
                     <window-folder ref="content" :user="user" :id="id" :file="current" @open="open"
-                                   @loadFinish="loadFinish"/>
+                                   @loadFinish="loadFinish" @loadError="loadError"/>
                 </template>
                 <template v-else-if="showEditor">
-                    <window-editor ref="content" :user="user" :file="current" @loadFinish="loadFinish"/>
+                    <window-editor ref="content" :user="user" :file="current" @loadFinish="loadFinish"
+                                   @loadError="loadError"/>
                 </template>
                 <template v-else-if="showViewer">
-                    <window-viewer ref="content" :user="user" :file="current" @loadFinish="loadFinish"/>
+                    <window-viewer ref="content" :user="user" :file="current" @loadFinish="loadFinish"
+                                   @loadError="loadError"/>
                 </template>
                 <template v-else-if="showPlayer">
-                    <window-player ref="content" :user="user" :file="current" @loadFinish="loadFinish"/>
+                    <window-player ref="content" :user="user" :file="current" @loadFinish="loadFinish"
+                                   @loadError="loadError"/>
                 </template>
             </template>
         </div>
@@ -65,14 +83,15 @@
 <script>
   import { File, FileType } from '../js/file'
   import { User } from '../js/user'
-  import WindowEditor from '@/pages/index/views/window-editor'
-  import WindowViewer from '@/pages/index/views/window-viewer'
-  import WindowPlayer from '@/pages/index/views/window-player'
+  import WindowEditor from './window-editor'
+  import WindowViewer from './window-viewer'
+  import WindowPlayer from './window-player'
   import WindowFolder from './window-folder'
   import WindowLoading from './window-loading'
+  import WindowError from './window-error'
 
   export default {
-    components: { WindowLoading, WindowFolder, WindowPlayer, WindowViewer, WindowEditor },
+    components: { WindowError, WindowLoading, WindowFolder, WindowPlayer, WindowViewer, WindowEditor },
     props: { id: String, user: User, file: File, z: Number },
     data() {
       return {
@@ -82,6 +101,7 @@
         active: true,
         history: [],
         historyIndex: 0,
+        error: null,
       }
     },
     methods: {
@@ -102,16 +122,22 @@
       loadFinish() {
         this.loading = false
       },
+      loadError(error) {
+        this.error = error
+        this.loading = false
+      },
       async load(force = false) {
         this.loading = true
+        this.error = null
         this.$nextTick(() => {
           this.$refs['content'].load(force)
         })
       },
       open(file) {
+        console.log('window.vue open', this.loading, file)
         if(this.loading)
           return
-        // console.log(this.historyIndex, this.history.length)
+
         this.history.splice(this.historyIndex + 1)
         this.append(file)
         this.historyIndex++
@@ -126,6 +152,17 @@
       },
       append(file) {
         this.history.push(file)
+      },
+      create(command) {
+        if(command === 'folder') {
+          this.$prompt('输入文件夹名称', '创建文件夹').then(({ value }) => {
+            this.$refs['content'].create(FileType.Folder, value)
+          }).catch(() => {})
+        } else if(command === 'text') {
+          this.$prompt('输入文本文件名称', '创建文本文件').then(({ value }) => {
+            this.$refs['content'].create(FileType.Text, value)
+          }).catch(() => {})
+        }
       },
     },
     computed: {
@@ -143,6 +180,13 @@
       },
       showViewer() {
         return [FileType.Image].indexOf(this.current.type) !== -1
+      },
+      path() {
+        return this.history.slice(0, this.historyIndex + 1).map((file, i) => {
+          if(i === 0)
+            return this.user.name
+          return file.name
+        })
       },
     },
     async beforeMount() {
@@ -168,7 +212,7 @@
         minHeight: 150,
         minWidth: 200,
         start: () => {
-          // this.dragging = true
+          this.dragging = true
         },
         stop: () => {
           this.dragging = false

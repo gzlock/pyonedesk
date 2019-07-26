@@ -370,3 +370,21 @@ async def delete_file(request, user_id: str):
             return response.text('ok')
         else:
             raise ServerError('删除失败：{}\n原因：{}'.format(path, res.json()['error']['message']))
+
+
+@admin_api.get('/create_folder/<user_id:string>')
+async def create_folder(request, user_id: str):
+    account: Account = Account.get_by_id(user_id)
+    if account is None:
+        raise NotFound('不存在的账号别名')
+    path = request.raw_args.get('path')
+    name = request.raw_args.get('name')
+    if path is None:
+        raise ServerError('参数path是必须的')
+    if name is None:
+        raise ServerError('参数name是必须的')
+
+    data = account.create_folder(path=path, name=name)
+    if 'id' not in data:
+        raise ServerError('创建文件夹失败')
+    return response.json(data)

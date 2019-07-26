@@ -19,7 +19,7 @@
     },
     methods: {
       async loadContent(force) {
-        const path = ':' + this.file.path
+        const path = ':' + this.file.path + '/' + this.file.name
         const { data: msData } = await this.$store.dispatch('load', { user: this.user, path, force })
         this.src = msData['@microsoft.graph.downloadUrl']
 

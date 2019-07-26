@@ -1,5 +1,6 @@
 <template>
     <div class="desktop full" @dragover.prevent @drop.prevent>
+        <settings/>
         <user-icon v-for="user in users" :key="user.id" :user="user"/>
         <window v-for="win in windows"
                 :key="win.id" :id="win.id" :user="win.user" :file="win.file" :z="win.z" :uploads="win.uploads"
@@ -14,9 +15,10 @@
   import UserIcon from './views/user-icon'
   import { User } from './js/user'
   import Contextmenu from './views/contextmenu'
+  import Settings from './views/settings'
 
   export default {
-    components: { Contextmenu, UserIcon, Window },
+    components: { Settings, Contextmenu, UserIcon, Window },
     data() {
       return {
         defaultProps: {

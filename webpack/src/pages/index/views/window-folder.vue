@@ -1,31 +1,29 @@
 <template>
     <div @dragenter.prevent="dragEnter" @dragover.prevent
-         @drop.prevent="dropFile" class="folder-container" @paste.prevent="paste">
+         @drop.prevent="dropFile" class="folder-container"
+         @paste.prevent="paste">
         <div class="upload-icon" v-if="isDragEnter" @dragleave.prevent="dragLeave" ref="dragLeave">
             <svg aria-hidden="true" class="icon">
                 <use data-v-093dcf52="" xlink:href="#py_shangchuan1"></use>
             </svg>
             <div>
-                将文件上传到这个文件夹<br>
-                注意：通过拖拽文件夹上传有文件数量限制
+                将文件 / 文件夹 上传到这个目录<br>
             </div>
         </div>
+
         <!--正常文件-->
         <div class="folder">
-            <file-icon v-for="(_file,i) in files" :key="i" :parent="file" :file="_file" @dblclick="open" :id="id"/>
+            <file-icon v-for="(_file,i) in files" :key="i" :parent="file" :file="_file" :id="id" @dblclick="open"/>
+        </div>
+        <div v-if="nextPage" class="next-page">
+            <el-button @click="loadNextPage" type="text" :loading="loading">加载更多</el-button>
         </div>
 
         <!--上传中-->
         <div class="top-border" v-if="uploading.length > 0">
             <div class="header">
-                上传中，同时上传：
-                <el-select size="small" v-model="queueConcurrency">
-                    <el-option value="1">1</el-option>
-                    <el-option value="2">2</el-option>
-                    <el-option value="5">5</el-option>
-                    <el-option value="8">8</el-option>
-                    <el-option value="10">10</el-option>
-                </el-select>
+                <span>上传中，同时上传：{{queueConcurrency}}</span>
+                <el-button type="text" @click="$store.state.settings=true">设置</el-button>
             </div>
             <div class="folder">
                 <file-icon v-for="(item,i) in uploading" :key="i" :parent="file" :file="item.file" :id="id"/>
@@ -56,38 +54,14 @@
 
 <script>
   import WindowBaeContent from './window-base-content'
-  import { join } from 'path'
   import FileIcon from './file-icon'
   import { File, FileState, FileType } from '../js/file'
   import { WindowEvent } from '../js/window'
   import { findIndex } from 'lodash'
+  import { getFilesFromDataTransferItems } from 'datatransfer-files-promise'
+  import { API } from '../../admin/preset'
 
-  async function traverseFileTree(file, path) {
-    path = path || ''
-    const files = []
-    if(file.isFile) {
-      // Get file
-      await new Promise(resolve => {
-        file.file(f => {
-          const file = new File(f.name, path + '/' + f.name, f.type)
-          file.file = f
-          files.push(file)
-          resolve()
-        })
-      })
-    } else if(file.isDirectory) {
-      // Get folder contents
-      await new Promise(resolve => {
-        file.createReader().readEntries(async entries => {
-          for(let i = 0; i < entries.length; i++) {
-            files.push(...await traverseFileTree(entries[i], path + file.name + '/'))
-          }
-          resolve()
-        })
-      })
-    }
-    return files
-  }
+  const path = require('path')
 
   export default {
     extends: WindowBaeContent,
@@ -96,13 +70,14 @@
     props: ['id', 'user', 'file'],
     data() {
       return {
-        loading: false,
         isDragEnter: false,
         files: [],
+        nextPage: null,
       }
     },
     watch: {
       file() {
+        this.nextPage = null
         this.files.length = 0
         this.load()
       },
@@ -125,9 +100,6 @@
           console.log('改变队列数量', value)
           this.$store.commit('setUploadQueueConcurrency', value)
         },
-      },
-      uploadCount() {
-        return this.$store.state.uploading.filter(({ path }) => path === this.parent.path).length
       },
     },
     methods: {
@@ -162,44 +134,40 @@
       },
       selectUploadFiles(e) {
         //通过 按钮 上传文件
-        const path = this.file.path === '/' ? this.file.path : this.file.path + '/'
         const files = e.target.files
         for(let i = 0; i < files.length; i++) {
-          const file = files[i]
-          console.log('input file', file)
-          const _file = new File(file.name, path + file.webkitRelativePath, file.type)
-          _file.file = file
+          const data = files[i]
+          const _path = path.join(this.file.path, this.file.name, data.webkitRelativePath)
+          console.log('input file', data)
+          const file = new File(data.name, _path, data.type)
+          file.file = data
 
-          const index = findIndex(this.files, { path: file.path, name: file.name })
+          const index = findIndex(this.files, { path: data.path, name: data.name })
           if(index > -1) {
-            this.$confirm(`${file.name} 已经存在，是否覆盖？`).then(() => {
+            this.$confirm(`${data.name} 已经存在，是否覆盖？`).then(() => {
               this.$store.commit('uploadFile', { id: this.id, path: this.file.path, file })
             }).catch(() => {})
           }
-          this.$store.commit('uploadFile', { id: this.id, path: this.file.path, file: _file })
+          this.$store.commit('uploadFile', { id: this.id, path: this.file.path, file })
         }
       },
+      /**
+       * 通过 拖拽 上传文件
+       * @param e
+       * @returns {Promise<void>}
+       */
       async dropFile(e) {
-        //通过 拖文件 上传文件
         this.isDragEnter = false
-
-        const path = this.file.path === '/' ? this.file.path : this.file.path + '/'
-        const items = e.dataTransfer.items, files = []
-        for(let i = 0; i < items.length; i++) {
-          const entry = items[i].webkitGetAsEntry(), item = items[i].getAsFile()
-          if(entry) {
-            const _files = await traverseFileTree(entry, path)
-            _files.forEach(file => {
-              files.push(file)
-            })
-          } else if(item) {
-            files.push(new File(item.name, path, item.type))
-          }
-        }
-        files.forEach(file => {
-          file.type = FileType.Normal
-
-          console.log('drop file 新文件', file.path)
+        const files = await getFilesFromDataTransferItems(e.dataTransfer.items)
+        files.forEach(data => {
+          const split = data.filepath.split('/')
+          split.pop()
+          const _path = path.join(this.file.path, this.file.name, ...split),
+            file = new File(data.name, _path, data.type)
+          // console.log('drop file path', this.file.path, _path)
+          //文件数据
+          file.file = data
+          // console.log('drop file 新文件', file)
           const index = findIndex(this.files, { path: file.path, name: file.name })
           if(index > -1) {
             this.$confirm(`${file.name} 已经存在，是否覆盖？`).then(() => {
@@ -210,24 +178,48 @@
         })
       },
       open(file) {
+        console.log('window-folder open', file)
         this.$emit('open', file)
       },
       async loadContent(force = false) {
         //清空 上传列表
-        let path = ''
-        if(this.file.path !== '/')
-          path = `:${this.file.path}:`
-        path += '/children?expand=thumbnails'
+        let _path = path.join(this.file.path, this.file.name)
+        if(_path === '/')
+          _path = ''
+        else
+          _path = `:${_path}:`
+        _path += '/children?expand=thumbnails'
+        if(force)
+          this.nextPage = null
 
-        const { data } = await this.$store.dispatch('load', { user: this.user, path, force })
-        this.files = data.value.map(data => {
-          const path = join(this.file.path, data.name)
-          const file = new File(data.name, path)
-          file.state = FileState.Normal
-          file.setFromData(data)
-          file.setType()
-          return file
-        })
+        try {
+          const { data } = await this.$store.dispatch('load', { user: this.user, path: _path, force })
+          this.files = data.value.map(data => {
+            const _path = path.join(this.file.path, this.file.name)
+            const file = new File(data.name, _path).setFromData(data)
+            return file.setFromData(data).setType().setState(FileState.Normal)
+          })
+          if(data['@odata.nextLink'])
+            this.nextPage = data['@odata.nextLink'].split('/root')[1]
+          else
+            this.nextPage = null
+        } catch(e) {
+          this.$emit('loadError', e.response.data)
+        }
+      },
+      async loadNextPage() {
+        this.loading = true
+        const { data } = await this.$store.dispatch('load', { user: this.user, path: this.nextPage, force: true })
+        this.files.push(...data.value.map(data => {
+          const _path = path.join(this.file.path, this.file.name)
+          const file = new File(data.name, _path)
+          return file.setFromData(data).setType().setState(FileState.Normal)
+        }))
+        if(data['@odata.nextLink'])
+          this.nextPage = data['@odata.nextLink'].split('/root')[1]
+        else
+          this.nextPage = null
+        this.loading = false
       },
       removeFile(file) {
         const index = this.files.indexOf(file)
@@ -235,6 +227,10 @@
           this.files.splice(index, 1)
       },
       fileUploaded(file) {
+        //不属于这个文件夹
+        if(file.path !== path.join(this.file.path, this.file.name))
+          return
+
         const index = findIndex(this.files, { name: file.name })
         if(index > -1)
           this.files.splice(index, 1)
@@ -250,6 +246,19 @@
         this.$confirm('确认清空上传失败的任务？').then(() => {
           this.$store.commit('clearUploadingFile', FileState.UploadFail)
         }).catch(() => {})
+      },
+      create(type, name) {
+        console.log('创建', type, name)
+        if(type === FileType.Folder) {
+          const _path = path.join(this.file.path, this.file.name) === '/' ? '/root' : '/items/' + this.file.id
+          this.$http.get(API.createFolder + '/' + this.user.id + '?path=' + _path + '&name=' + name).
+            then(({ data }) => {
+              this.files.push(
+                new File(name, path.join(this.file.path, name)).setFromData(data).
+                  setType(FileType.Folder).
+                  setState(FileState.Normal))
+            }).catch(() => {})
+        }
       },
     },
     mounted() {
@@ -288,6 +297,10 @@
                 margin-right: 20px;
                 fill: blue;
             }
+        }
+
+        .next-page {
+            text-align: center
         }
 
         .folder {
