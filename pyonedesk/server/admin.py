@@ -9,13 +9,13 @@ import requests
 from diskcache import Cache
 from requests import Response
 from sanic import Blueprint, response
-from sanic.exceptions import Forbidden, NotFound, ServerError
+from sanic.exceptions import NotFound, ServerError
 from shortuuid import ShortUUID
 
 from pyonedesk.config import stylizes as default_stylizes
-from utils import upload
+from pyonedesk.utils import upload
 from .account import Account, make_header
-from .utils import sha256, aesDecrypt, aesEncrypt, createAppUrl, getCodeUrl
+from .utils import sha256, aes_decrypt, aes_encrypt, createAppUrl, getCodeUrl
 
 admin = Blueprint('admin', url_prefix='/admin')
 admin_api = Blueprint('admin_api', url_prefix='/admin/api')
@@ -30,12 +30,20 @@ uuid = ShortUUID()
 
 
 def __checkToken(request) -> bool:
+    """
+    检查cookies['token']
+    :param request:
+    :return:
+    """
     config = request.app.cache.get('config')
     token = request.cookies.get('token')
     if token is None:
         return False
 
-    token = json.loads(aesDecrypt(config['aes_key'], token, __iv))
+    try:
+        token = json.loads(aes_decrypt(config['aes_key'], token))
+    except:
+        return False
     return token['password'] == config['password']
 
 
@@ -73,7 +81,10 @@ async def login_action(request):
         return response.json(code)
 
     config = request.app.cache.get('config')
-    password = sha256(request.json['password'])
+    password = request.json.get('password')
+    if password is None:
+        raise ServerError('缺少密码')
+    password = sha256(password)
     print('登录', config['password'], password)
     print('登录', config['aes_key'])
 
@@ -83,7 +94,9 @@ async def login_action(request):
 
     json_str = json.dumps({'password': password, 'r': random.random()})
 
-    data.cookies['token'] = aesEncrypt(config['aes_key'], json_str, __iv)
+    token = aes_encrypt(config['aes_key'], json_str)
+    # print('token', type(token), token)
+    data.cookies['token'] = token
     data.cookies['token']['httponly'] = True
     return data
 
@@ -93,10 +106,14 @@ async def check_token(request):
     path: str = request.path
     # method: str = request.method.lower()
     if __checkToken(request) is False:
+        res = None
         if path == '/admin':
-            response.redirect(admin.url_prefix + '/login')
+            res = response.redirect(admin.url_prefix + '/login')
         elif path.startswith(admin_api.url_prefix):
-            raise Forbidden('没有管理权限')
+            res = response.text('没有管理权限', status=403)
+        if res is not None:
+            del res.cookies['token']
+            return res
 
 
 @admin_api.get('/accounts')
@@ -268,7 +285,7 @@ async def get_code(request, id: str):
 
     state = int(account.request_token_by_code(code))
     print('接收Code', account.name, code, state)
-    with open(os.path.join(res_dir, 'admin_get_code.html'), 'r') as file:
+    with open(os.path.join(res_dir, 'admin_get_code.html'), 'r', encoding='UTF-8') as file:
         html = file.read().replace("'{data}'", json.dumps(
             {'account': account.to_json(), 'state': state, 'code': code}))
         return response.html(html)

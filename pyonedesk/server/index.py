@@ -18,7 +18,7 @@ index = Blueprint('index', url_prefix='/')
 async def index_page(request):
     cache: Cache = request.app.cache
     stylizes: dict = cache.get('stylizes', default=default_stylizes)
-    with open(os.path.join(res_dir, 'index.html')) as file:
+    with open(os.path.join(res_dir, 'index.html'), 'r', encoding='UTF-8') as file:
         html = file.read()
 
         default_icon_src = default_stylizes['icon']['src']
@@ -82,12 +82,12 @@ async def style(request):
 
 
 @index.get('/accounts')
-async def accounts(request):
+async def get_accounts(request):
     return await get_accounts_list(request)
 
 
 @index.get('/path/<user_id:string>')
-async def accounts(request, user_id: str):
+async def get_path_content(request, user_id: str):
     account: Account = Account.get_by_id(user_id)
     if account is None:
         raise NotFound('不存在的账号')
@@ -104,7 +104,7 @@ async def accounts(request, user_id: str):
 
 
 @index.get('/download/<user_id:string>')
-async def accounts(request, user_id: str):
+async def download_file(request, user_id: str):
     account: Account = Account.get_by_id(user_id)
     if account is None:
         raise NotFound('不存在的账号')

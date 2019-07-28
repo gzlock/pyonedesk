@@ -1,9 +1,10 @@
 # coding:utf-8
 
-import base64
 import hashlib
+from base64 import b64encode, b64decode
 
 from Crypto.Cipher import AES
+from Crypto.Util import Padding
 
 from .account import Account
 
@@ -12,21 +13,18 @@ def sha256(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
 
-def multiple16(text: str, fill: str = ' ') -> str:
-    length = len(text)
-    length = length - length % 16 + 16
-    return text.ljust(length, fill)
-
-
-def aesEncrypt(key: bytes, text: str, iv: str) -> str:
+def aes_encrypt(key: bytes, text: str) -> str:
+    iv = key[8:AES.block_size + 8]
     aes = AES.new(key, AES.MODE_CBC, iv)
-    return base64.b16encode(aes.encrypt(multiple16(text))).decode()
+    text = Padding.pad(text.encode('utf-8'), AES.block_size)
+    return b64encode(aes.encrypt(text)).decode('utf-8')
 
 
-def aesDecrypt(key: bytes, text: str, iv: str) -> str:
-    text = base64.b16decode(text)
+def aes_decrypt(key: bytes, text: str) -> str:
+    text = b64decode(text.encode('utf-8'))
+    iv = key[8:AES.block_size + 8]
     aes = AES.new(key, AES.MODE_CBC, iv)
-    return aes.decrypt(text).decode().strip()
+    return Padding.unpad(aes.decrypt(text), AES.block_size).decode('utf-8')
 
 
 def redirectUrl(request, id: str) -> str:

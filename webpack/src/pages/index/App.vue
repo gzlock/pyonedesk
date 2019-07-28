@@ -1,6 +1,7 @@
 <template>
     <div class="desktop full" @dragover.prevent @drop.prevent>
         <settings/>
+        <empty-user-tips v-if="users.length === 0"/>
         <user-icon v-for="user in users" :key="user.id" :user="user"/>
         <window v-for="win in windows"
                 :key="win.id" :id="win.id" :user="win.user" :file="win.file" :z="win.z" :uploads="win.uploads"
@@ -16,9 +17,10 @@
   import { User } from './js/user'
   import Contextmenu from './views/contextmenu'
   import Settings from './views/settings'
+  import EmptyUserTips from './views/empty-user-tips'
 
   export default {
-    components: { Settings, Contextmenu, UserIcon, Window },
+    components: { EmptyUserTips, Settings, Contextmenu, UserIcon, Window },
     data() {
       return {
         defaultProps: {
@@ -35,10 +37,9 @@
     methods: {},
     async beforeMount() {
       this.$store.commit('setVueInstance', this)
-      const res = await this.$store.dispatch('api', { url: Index.accounts })
+      const { data } = await this.$store.dispatch('api', { url: Index.accounts })
       this.users.length = 0
-      for(let key in res.data) {
-        const user = res.data[key]
+      for(let user in Object.values(data)) {
         const account = new User(user.id, user.name)
         this.users.push(account)
       }

@@ -1,3 +1,5 @@
+import sys
+import threading
 import time
 from multiprocessing import Process
 
@@ -6,7 +8,8 @@ from diskcache import Cache
 from .account import Account
 
 
-def worker(cache: Cache):
+def worker(cache):
+    print('干活啦')
     Account.cache = cache
     while True:
         work = 0
@@ -20,8 +23,8 @@ def worker(cache: Cache):
         time.sleep(30)
 
 
-def main(cache: Cache):
-    try:
+def run(cache: Cache):
+    if 'win' in sys.platform:
+        threading.Thread(target=worker, args=(cache,)).start()
+    else:
         Process(target=worker, args=(cache,)).start()
-    except:
-        pass

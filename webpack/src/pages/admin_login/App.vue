@@ -39,4 +39,8 @@
     body {
         background: #99a9bf;
     }
+
+    .el-dialog {
+        width: 500px !important;
+    }
 </style>

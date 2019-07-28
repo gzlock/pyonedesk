@@ -28,10 +28,9 @@ data_dir = os.path.join(appdirs.user_data_dir(appname=appName, appauthor='gzlock
 def main(ctx, debug: bool):
     ctx.ensure_object(dict)
     ctx.obj['debug'] = debug
-    global data_dir
-    if debug:
-        data_dir = './cache'
+
     cache = Cache(directory=data_dir)
+
     ctx.obj['cache'] = cache
     Account.cache = cache
 
@@ -50,7 +49,7 @@ def main(ctx, debug: bool):
     confirmation_prompt=True,
     hide_input=True,
     type=str,
-    help="set the admin password, default is pyonedrive",
+    help="set the admin password, default is pyonedesk",
 )
 @click.pass_obj
 def create_server(obj, port: int, password: str):
@@ -63,9 +62,9 @@ def create_server(obj, port: int, password: str):
 
     if _config is None:
         config = copy.deepcopy(default_config)
-        config['aes_key'] = md5(config['aes_key'])
     else:
         config = {**default_config, **_config}
+    config.update({'aes_key': md5(default_config['aes_key'])})
 
     obj['config'] = config
 

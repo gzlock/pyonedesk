@@ -5,7 +5,7 @@ requests
 sanic
 diskcache
 progress
-pycrypto
+pycryptodome
 shortuuid
 colorama
 setuptools

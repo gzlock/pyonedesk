@@ -37,11 +37,12 @@ def get_tree_size(path: str) -> int:
 
 
 def md5(text: str) -> bytes:
-    """快速md5，返回16位二进制数据"""
-    return hashlib.md5(text.encode()).digest()
+    """快速md5，返回16位bytes"""
+    return hashlib.md5(text.encode('utf-8')).hexdigest().encode('utf-8')
 
 
 def upload(url, content: Union[str, bytes], chunk_size: int = 10 * 1024 * 1024) -> dict:
+    """OneDrive 文件上传"""
     if isinstance(content, str):
         total_size = os.path.getsize(content)
         chunks = read_in_chunks(open(content), chunk_size)

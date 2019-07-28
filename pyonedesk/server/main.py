@@ -1,11 +1,14 @@
 # coding:utf-8
 import os
+import sys
+import threading
 
 from sanic import Sanic
 from sanic.exceptions import NotFound, ServerError, Forbidden
 from sanic.response import text
 from shortuuid import ShortUUID
 
+from pyonedesk.server import win_thread
 from . import loop_task
 from .account import Account
 from .admin import admin, admin_api
@@ -16,6 +19,7 @@ from ..server.utils import sha256
 def server(obj, port: int, password: str):
     config = obj['config']
     cache = obj['cache']
+
     config['password'] = sha256(password)
     cache.set('config', config)
     print('服务器 最终设置', cache.get('config'))
@@ -52,6 +56,9 @@ def server(obj, port: int, password: str):
     favicon = os.path.join(os.path.dirname(__file__), 'res', 'favicon.ico')
     app.static('/favicon.ico', favicon)
 
-    loop_task.main(cache=cache)
-
-    app.run(host='0.0.0.0', port=port, workers=4)
+    loop_task.run(cache=cache)
+    
+    if 'win' in sys.platform:
+        app.run(host='0.0.0.0', port=port)
+    else:
+        app.run(host='0.0.0.0', port=port, workers=4)
