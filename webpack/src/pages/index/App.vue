@@ -2,7 +2,7 @@
     <div class="desktop full" @dragover.prevent @drop.prevent>
         <settings/>
         <empty-user-tips v-if="users.length === 0"/>
-        <user-icon v-for="user in users" :key="user.id" :user="user"/>
+        <user-view v-for="user in users" :key="user.id" :user="user"/>
         <window v-for="win in windows"
                 :key="win.id" :id="win.id" :user="win.user" :file="win.file" :z="win.z" :uploads="win.uploads"
         />
@@ -13,14 +13,14 @@
 <script>
   import { Index } from './preset'
   import Window from './views/window'
-  import UserIcon from './views/user-icon'
+  import UserView from './views/user'
   import { User } from './js/user'
   import Contextmenu from './views/contextmenu'
   import Settings from './views/settings'
   import EmptyUserTips from './views/empty-user-tips'
 
   export default {
-    components: { EmptyUserTips, Settings, Contextmenu, UserIcon, Window },
+    components: { EmptyUserTips, Settings, Contextmenu, UserView, Window },
     data() {
       return {
         defaultProps: {
