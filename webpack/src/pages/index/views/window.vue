@@ -60,20 +60,24 @@
             <window-error v-if="error" :error="error"/>
             <template v-show="!loading">
                 <template v-if="showFolder">
-                    <window-folder ref="content" :user="user" :id="id" :file="current" @open="open"
+                    <window-folder ref="content" :id="id" :user="user" :file="current" @open="open"
                                    @loadFinish="loadFinish" @loadError="loadError"/>
                 </template>
                 <template v-else-if="showEditor">
-                    <window-editor ref="content" :user="user" :file="current" @loadFinish="loadFinish"
+                    <window-editor ref="content" :id="id" :user="user" :file="current" @loadFinish="loadFinish"
                                    @loadError="loadError"/>
                 </template>
                 <template v-else-if="showViewer">
-                    <window-viewer ref="content" :user="user" :file="current" @loadFinish="loadFinish"
+                    <window-viewer ref="content" :id="id" :user="user" :file="current" @loadFinish="loadFinish"
                                    @loadError="loadError"/>
                 </template>
                 <template v-else-if="showPlayer">
-                    <window-player ref="content" :user="user" :file="current" @loadFinish="loadFinish"
+                    <window-player ref="content" :id="id" :user="user" :file="current" @loadFinish="loadFinish"
                                    @loadError="loadError"/>
+                </template>
+                <template v-else>
+                    <window-binary-file ref="content" :id="id" :user="user" :file="current" @loadFinish="loadFinish"
+                                        @loadError="loadError"/>
                 </template>
             </template>
         </div>
@@ -89,13 +93,22 @@
   import WindowFolder from './window-folder'
   import WindowLoading from './window-loading'
   import WindowError from './window-error'
+  import WindowBinaryFile from './window-binary-file'
 
   export default {
-    components: { WindowError, WindowLoading, WindowFolder, WindowPlayer, WindowViewer, WindowEditor },
+    components: {
+      WindowBinaryFile,
+      WindowError,
+      WindowLoading,
+      WindowFolder,
+      WindowPlayer,
+      WindowViewer,
+      WindowEditor,
+    },
     props: { id: String, user: User, file: File, z: Number },
     data() {
       return {
-        loading: false,
+        loading: true,
         dragging: false,
         zIndex: 0,
         active: true,

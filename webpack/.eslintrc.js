@@ -18,7 +18,7 @@ module.exports = {
     'DPlayer': false,
     'Icons': false,
     'async': false,
-    'Vibrant': false,
+    'moment': false,
   },
   'parserOptions': {
     'ecmaVersion': 2018,

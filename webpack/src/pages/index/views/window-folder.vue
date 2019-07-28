@@ -13,7 +13,7 @@
 
         <!--正常文件-->
         <div class="folder">
-            <file-icon v-for="(_file,i) in files" :key="i" :parent="file" :file="_file" :id="id" @dblclick="open"/>
+            <file-view v-for="(_file,i) in files" :key="i" :parent="file" :file="_file" :id="id" @dblclick="open"/>
         </div>
         <div v-if="nextPage" class="next-page">
             <el-button @click="loadNextPage" type="text" :loading="loading">加载更多</el-button>
@@ -26,7 +26,7 @@
                 <el-button type="text" @click="$store.state.settings=true">设置</el-button>
             </div>
             <div class="folder">
-                <file-icon v-for="(item,i) in uploading" :key="i" :parent="file" :file="item.file" :id="id"/>
+                <file-view v-for="(item,i) in uploading" :key="i" :parent="file" :file="item.file" :id="id"/>
             </div>
         </div>
         <!--上传失败-->
@@ -35,7 +35,7 @@
                 <el-button type="text" @click="clearUploadFail">清空</el-button>
             </div>
             <div class="folder">
-                <file-icon v-for="(item,i) in uploadFails" :key="i" :parent="file" :file="item.file" :id="id"/>
+                <file-view v-for="(item,i) in uploadFails" :key="i" :parent="file" :file="item.file" :id="id"/>
             </div>
         </div>
         <!--等待上传-->
@@ -44,7 +44,7 @@
                 <el-button type="text" @click="clearWaiting">全部取消</el-button>
             </div>
             <div class="folder">
-                <file-icon v-for="(item,i) in waiting" :key="i" :parent="file" :file="item.file" :id="id"/>
+                <file-view v-for="(item,i) in waiting" :key="i" :parent="file" :file="item.file" :id="id"/>
             </div>
         </div>
         <input type="file" style="display: none" class="hidden-file-input" multiple ref="fileInput"
@@ -54,7 +54,7 @@
 
 <script>
   import WindowBaeContent from './window-base-content'
-  import FileIcon from './file-icon'
+  import FileView from './file'
   import { File, FileState, FileType } from '../js/file'
   import { WindowEvent } from '../js/window'
   import { findIndex } from 'lodash'
@@ -66,7 +66,7 @@
   export default {
     extends: WindowBaeContent,
     name: 'window-folder',
-    components: { FileIcon },
+    components: { FileView },
     props: ['id', 'user', 'file'],
     data() {
       return {
@@ -258,6 +258,8 @@
                   setType(FileType.Folder).
                   setState(FileState.Normal))
             }).catch(() => {})
+        } else {
+          this.$alert('尚未实现')
         }
       },
     },

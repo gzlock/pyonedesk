@@ -23,7 +23,9 @@ const uploadQueue = queue(
     formData.append('file', file.file)
     axios({
         method: 'post',
-        url, data: formData, headers: { 'Content-Type': 'multipart/form-data' },
+        url,
+        data: formData,
+        headers: { 'Content-Type': 'multipart/form-data' },
       },
     ).then(({ data }) => {
       console.log('SUCCESS!!')
@@ -212,6 +214,7 @@ const $store = new Vuex.Store({
     },
   },
   actions: {
+
     async api(context, data) {
       try {
         return await axios(data)
@@ -221,6 +224,7 @@ const $store = new Vuex.Store({
         return null
       }
     },
+
     /***
      * 有缓存
      * @param context
