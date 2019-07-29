@@ -22,10 +22,6 @@
             width: 100%;
             height: 100px;
         }
-
-        #name {
-            text-align: center;
-        }
     </style>
 </head>
 <body>
@@ -33,11 +29,8 @@
 
 </noscript>
 <div>
-    <!--<div>请将下面的Code复制到PyOneDrive管理后台</div>
+    <div>请将下面的Code复制到PyOneDrive管理后台对应的OneDrive账号</div>
     <div><textarea id="code" disabled></textarea></div>
-    <div>对应的账号是：</div>
-    <div id="name"></div>-->
-    请等待自动跳转，或 <a id="redirect">打开这个链接</a>
 </div>
 <script>
   window.addEventListener('load', function() {
@@ -47,13 +40,7 @@
     })
     if(!query['code'])
       return alert('缺少Code参数，请不要自行打开这个页面')
-    // document.querySelector('#code').value = query['code']
-    // document.querySelector('#name').innerText = query['name']
-    if(query['state']) {
-      const url = decodeURIComponent(query['state']) + '?code=' + code
-      document.querySelector('#redirect').setAttribute('href', url)
-      window.location.href = url
-    }
+    document.querySelector('#code').value = query['code']
   })
 </script>
 </body>
