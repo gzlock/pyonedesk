@@ -29,7 +29,9 @@
       query[q[0]] = q[1]
     })
     if(!query['code'])
-      return alert('缺少Code参数，请不要自行打开这个页面')
+      return alert('缺少code参数，请不要自行打开这个页面')
+    if(!query['url'])
+      return alert('缺少url参数，请不要自行打开这个页面')
     window.location.href = query['url'] + '?code=' + query['code']
   })
 </script>
