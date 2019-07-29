@@ -40,7 +40,13 @@
     })
     if(!query['code'])
       return alert('缺少Code参数，请不要自行打开这个页面')
-    document.querySelector('#code').value = query['code']
+    const $code = document.querySelector('#code')
+    $code.value = query['code']
+
+    $code.mouseenter(function() {
+      this.focus()
+      this.select()
+    })
   })
 </script>
 </body>
