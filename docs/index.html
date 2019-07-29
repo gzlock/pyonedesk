@@ -16,23 +16,44 @@
             justify-content: center;
             align-items: center;
         }
+
+        #code {
+            resize: none;
+            width: 100%;
+            height: 100px;
+        }
+
+        #name {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
+<noscript>
+
+</noscript>
 <div>
-    <div>正在跳转，请稍候</div>
+    <!--<div>请将下面的Code复制到PyOneDrive管理后台</div>
+    <div><textarea id="code" disabled></textarea></div>
+    <div>对应的账号是：</div>
+    <div id="name"></div>-->
+    请等待自动跳转，或 <a id="redirect">打开这个链接</a>
 </div>
 <script>
   window.addEventListener('load', function() {
-    query = {}
+    const query = {}
     window.location.search.slice(1).split('&').map(query => query.split('=')).forEach(q => {
       query[q[0]] = q[1]
     })
     if(!query['code'])
-      return alert('缺少code参数，请不要自行打开这个页面')
-    if(!query['url'])
-      return alert('缺少url参数，请不要自行打开这个页面')
-    window.location.href = query['url'] + '?code=' + query['code']
+      return alert('缺少Code参数，请不要自行打开这个页面')
+    // document.querySelector('#code').value = query['code']
+    // document.querySelector('#name').innerText = query['name']
+    if(query['state']) {
+      const url = decodeURIComponent(query['state']) + '?code=' + code
+      document.querySelector('#redirect').setAttribute('href', url)
+      window.location.href = url
+    }
   })
 </script>
 </body>
