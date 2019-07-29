@@ -3,8 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <title>用于显示Code的页面</title>
+    <style>
+        html, body {
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
 </head>
 <body>
-请将下面的Code复制并粘贴到PyOneDrive管理页面
+<div>
+    <div>正在跳转，请稍候</div>
+</div>
+<script>
+  window.addEventListener('load', function() {
+    query = {}
+    window.location.search.slice(1).split('&').map(query => query.split('=')).forEach(q => {
+      query[q[0]] = q[1]
+    })
+    if(!query['code'])
+      return alert('缺少Code参数，请不要自行打开这个页面')
+    document.querySelector('#code').value = query['code']
+    document.querySelector('#name').innerHTML = query['name']
+    window.location.href = query['url'] + '?code=' + query['code']
+  })
+</script>
 </body>
 </html>
