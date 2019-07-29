@@ -32,12 +32,6 @@ module.exports = {
       title: '登录PyOneDesk管理后台',
       template: 'public/admin.html',
     },
-    admin_get_code: {
-      entry: 'src/pages/admin_get_code/main.js',
-      filename: 'admin_get_code.html',
-      title: '从微软网站接收Code页面',
-      template: 'public/admin_get_code.html',
-    },
   },
   productionSourceMap: false,
   devServer: {

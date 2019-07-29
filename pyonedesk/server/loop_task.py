@@ -9,7 +9,7 @@ from .account import Account
 
 
 def worker(cache):
-    print('干活啦')
+    # print('干活啦')
     Account.cache = cache
     while True:
         work = 0

@@ -9,7 +9,7 @@
     props: ['account'],
     computed: {
       href() {
-        return `${API.goCreateAppUrl}/${this.account.id}/${this.account.name}`
+        return `${API.goCreateAppUrl}/${this.account.id}/${this.account.name}?origin=` + window.location.origin
       },
     },
     methods: {

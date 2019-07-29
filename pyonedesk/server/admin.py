@@ -192,22 +192,29 @@ async def save_account(request, id: str):
     if account is None:
         raise NotFound()
     data = request.json
-    if 'default' in data and type(data['default']) is bool:
-        print('默认账号', request.json['default'])
-        if request.json['default']:
+    default = data.get('default')
+    name = data.get('name')
+    code = data.get('code')
+    if type(default) is bool:
+        # print('默认账号')
+        if default:
             cache.set('default_account_id', id)
         else:
             cache.delete('default_account_id')
-    if 'name' in data and type(data['name'] is str):
-        name = data['name']
-        if len(name) < 3:
-            raise ServerError('账号别名长度需要超过2个字')
-        accounts = Account.get_accounts().values()
-        for _account in accounts:
-            if _account.id != id and _account.name == name:
-                raise ServerError('有其它相同别名的账号')
-        account.name = name
+    if name is not None and len(name) < 2:
+        raise ServerError('账号别名的长度需要大于等于2个字符')
 
+    accounts = Account.get_accounts().values()
+    for _account in accounts:
+        if _account.id != id and _account.name == name:
+            raise ServerError('有其它相同别名的账号')
+
+    if code is not None:
+        state = account.request_token_by_code(code)
+        if state is False:
+            raise ServerError('Code无效')
+
+    account.name = name
     account.save()
     return response.json({'code': 1})
 
@@ -243,28 +250,31 @@ async def add_account(request):
     :param request:
     :return:
     """
-    id = request.json['id']
-
+    id = request.json.get('id')
+    name = request.json.get('name')
+    client_id = request.json.get('client_id')
+    client_secret = request.json.get('client_secret')
     if len(id) != 5:
         raise ServerError('ID格式不符合规则')
+    if name is None:
+        raise ServerError('缺少昵称')
+    elif len(name) < 2:
+        raise ServerError('昵称最少需要两个字符')
+    if client_id is None:
+        raise ServerError('缺少client_id')
+    if client_secret is None:
+        raise ServerError('缺少client_secret')
 
     accounts = Account.get_accounts()
 
     if id in accounts:
-        raise ServerError('已经相同ID的账号了')
-
-    name = request.json['name']
+        raise ServerError('已经有相同ID的账号')
 
     for account in accounts.values():
         if account.name == name:
-            raise ServerError('已经相同别名的账号了')
+            raise ServerError('已经相同别名的账号')
 
-    client_id = request.json['client_id']
-    client_secret = request.json['client_secret']
-    url = Account.create_redirect_url(scheme=request.scheme, host=request.host, id=id)
-
-    account = Account(id=id, name=name, client_id=client_id,
-        client_secret=client_secret, url=url)
+    account = Account(id=id, name=name, client_id=client_id, client_secret=client_secret)
     account.save()
     return response.json(account.to_json())
 
@@ -300,9 +310,7 @@ async def redirect_to_create_app_url(request, id: str, name: str):
     :param name:
     :return:
     """
-    url = Account.create_redirect_url(scheme=request.scheme, host=request.host,
-        id=id)
-    go_url = createAppUrl(name=name, url=url)
+    go_url = createAppUrl(name=name)
     #  print(url, go_url)
     return response.redirect(go_url)
 

@@ -72,7 +72,7 @@
             top: -10px;
             left: -30px;
             font-size: 24px;
-            background: #99a9bf;
+            background: #3a8ee6;
             width: 80px;
             height: 40px;
             color: white;

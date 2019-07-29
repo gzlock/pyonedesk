@@ -12,9 +12,9 @@
                 没有【应用ID】和【应用机密钥匙】？立即
                 <create-app-button :account="form"/>
                 <br>
-                创建途中一定要记录下应用ID和应用机密钥匙，并填入到输入框。
+                创建途中一定要记录应用ID和应用机密钥匙，并填入到输入框。
             </el-form-item>
-            <el-form-item label="系统ID">
+            <el-form-item label="系统 ID">
                 {{form.id}}
                 <div style="color: #999;">PyOneDesk识别账号用的</div>
             </el-form-item>
@@ -93,17 +93,16 @@
         this.$refs['clientForm'].validate(async valid => {
           if(!valid)
             return
+
+          const form = JSON.parse(JSON.stringify(this.form))
           const { data } = await this.$store.dispatch('api', {
             url: API.addAccount,
             method: 'post',
-            data: this.form,
+            data: form,
           })
           this.$store.state.accounts[data.id] = data
           this.loading = false
-          this.$message({
-            message: '成功添加账号，但还有最后一步操作',
-            type: 'success',
-          })
+          this.$message.success('成功添加账号，但还有最后一步操作')
           this.$router.replace({ name: 'edit', params: { id: data.id } })
         })
       },

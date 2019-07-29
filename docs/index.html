@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <title>用于显示Code的页面</title>
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.slim.min.js"></script>
     <style>
         html, body {
             height: 100vh;
@@ -29,8 +30,9 @@
 
 </noscript>
 <div>
-    <div>请将下面的Code复制到PyOneDrive管理后台对应的OneDrive账号</div>
-    <div><textarea id="code" disabled></textarea></div>
+    <div>复制下面的Code</div>
+    <div>粘贴到PyOneDesk管理后台对应的OneDrive账号</div>
+    <div><textarea id="code"></textarea></div>
 </div>
 <script>
   window.addEventListener('load', function() {
@@ -40,12 +42,11 @@
     })
     if(!query['code'])
       return alert('缺少Code参数，请不要自行打开这个页面')
-    const $code = document.querySelector('#code')
-    $code.value = query['code']
 
-    $code.mouseenter(function() {
-      this.focus()
-      this.select()
+    const $code = $('#code')
+    $code.val(query['code'])
+    $code.mouseover(function() {
+      $(this).select()
     })
   })
 </script>

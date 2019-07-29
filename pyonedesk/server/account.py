@@ -8,18 +8,19 @@ from typing import Optional, Dict
 import requests
 from diskcache import Cache
 
+from pyonedesk.server import get_code_url
+
 ms_token_url = 'https://login.microsoftonline.com/common/oauth2/v2.0/token'
 
 
 class Account:
     cache: Cache
 
-    def __init__(self, id: str, name: str, client_id: str, client_secret: str, url: str):
+    def __init__(self, id: str, name: str, client_id: str, client_secret: str):
         self.__id = id
         self.__name = name
         self.__client_id = client_id
         self.__client_secret = client_secret
-        self.__url = url
         self.__refresh_token = None
 
     def to_json(self) -> dict:
@@ -28,7 +29,6 @@ class Account:
             'name': self.__name,
             'client_id': self.__client_id,
             'client_secret': self.__client_secret,
-            'url': self.__url,
             'has_token': self.has_token and self.has_refresh_token,
             'refresh_token': self.__refresh_token}
 
@@ -63,15 +63,6 @@ class Account:
         self.__client_secret = value
         self.save()
 
-    @property
-    def url(self) -> str:
-        return self.__url
-
-    @url.setter
-    def url(self, value: str):
-        self.__url = value
-        self.save()
-
     def refresh_token(self) -> bool:
         """
         发送请求给微软，刷新Token
@@ -81,7 +72,7 @@ class Account:
             client_id=self.__client_id,
             client_secret=self.__client_secret,
             refresh_token=self.__refresh_token,
-            redirect_uri=self.__url
+            redirect_uri=get_code_url
         )
         res = requests.post(ms_token_url,
             headers={'Content-Type': 'application/x-www-form-urlencoded'},
@@ -113,8 +104,8 @@ class Account:
         :return:
         """
         data = 'client_id={client_id}&redirect_uri={redirect_uri}&client_secret={client_secret}&code={code}&grant_type=authorization_code'.format(
-            client_id=self.client_id, client_secret=self.client_secret, redirect_uri=self.url,
-            code=code)
+            client_id=self.client_id, client_secret=self.client_secret,
+            redirect_uri=get_code_url, code=code)
         res = requests.post(ms_token_url,
             headers={'Content-Type': 'application/x-www-form-urlencoded'},
             data=data)

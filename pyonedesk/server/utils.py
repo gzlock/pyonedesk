@@ -6,6 +6,7 @@ from base64 import b64encode, b64decode
 from Crypto.Cipher import AES
 from Crypto.Util import Padding
 
+from pyonedesk.server import get_code_url
 from .account import Account
 
 
@@ -32,12 +33,12 @@ def redirectUrl(request, id: str) -> str:
         id=id)
 
 
-def createAppUrl(name: str, url: str) -> str:
+def createAppUrl(name: str) -> str:
     appName = 'PyOneDrive-' + name
     return 'https://apps.dev.microsoft.com/?referrer=https%3a%2f%2fdeveloper.microsoft.com%2fzh-cn%2fgraph%2fquick-start#/quickstart/graphIO?publicClientSupport=false&appName={appName}&redirectUrl={redirectUrl}&allowImplicitFlow=false&ru=https:%2F%2Fdeveloper.microsoft.com%2Fzh-cn%2Fgraph%2Fquick-start%3FappID%3D_appId_%26appName%3D_appName_%26redirectUrl%3D{redirectUrl}%26platform%3Doption-Python'.format(
-        appName=appName, redirectUrl=url)
+        appName=appName, redirectUrl=get_code_url)
 
 
 def getCodeUrl(account: Account) -> str:
     return 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?response_type=code&client_id={client_id}&redirect_uri={redirectUrl}&scope=offline_access%20Files.ReadWrite.All'.format(
-        redirectUrl=account.url, client_id=account.client_id)
+        redirectUrl=get_code_url, client_id=account.client_id)
