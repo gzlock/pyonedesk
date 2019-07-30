@@ -44,7 +44,6 @@
       window.addEventListener('beforeunload', e => {
         if(this.$store.state.uploadingLength > 0) {
           const confirmationMessage = '\\o/';
-
           (e || window.event).returnValue = confirmationMessage
           return confirmationMessage
         }
