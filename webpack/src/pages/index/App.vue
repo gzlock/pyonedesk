@@ -3,9 +3,7 @@
         <settings/>
         <empty-user-tips v-if="loading===false && users.length === 0"/>
         <user-view v-for="user in users" :key="user.id" :user="user"/>
-        <window v-for="win in windows"
-                :key="win.id" :id="win.id" :user="win.user" :file="win.file" :z="win.z" :uploads="win.uploads"
-        />
+        <window v-for="win in windows" :key="win.id" :window="win" :uploads="win.uploads"/>
         <contextmenu v-model="menu.show" :x="menu.x" :y="menu.y" :file="menu.file" :id="menu.id"/>
     </div>
 </template>
@@ -56,7 +54,7 @@
 </script>
 
 <style scoped lang="scss">
-    @import "@/assets/global.scss";
+    @import "../../assets/global.scss";
 
     .desktop {
         display: flex;

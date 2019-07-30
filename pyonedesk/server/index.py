@@ -98,6 +98,8 @@ async def get_path_content(request, user_id: str):
     elif ':/content' in path:
         raise ServerError('不支持使用:/content读取文件内容')
     data = account.get_item(path=path)
+    if 'error' in data:
+        raise ServerError(data)
     if isinstance(data, dict):
         return response.json(data)
     return response.raw(body=data)

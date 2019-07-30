@@ -1,6 +1,8 @@
 export const WindowEvent = Object.freeze({
   FileUploaded: Symbol('uploaded'),
   FileDeleted: Symbol('deleted'),
+  SortFile: Symbol('sort'),
+  SearchFile: Symbol('search'), // 参数 {type:FileSortType,isUp:bool}
 })
 
 export class Window {

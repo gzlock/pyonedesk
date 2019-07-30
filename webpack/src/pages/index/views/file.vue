@@ -2,11 +2,13 @@
     <div class="file" @dblclick="open"
          @contextmenu.prevent="contextmenu" @click="click">
         <div class="file-icon" :class="{uploading:isUploading||isWaiting}">
-            <img :src="file.thumbnail" v-if="image" alt="图片"/>
+            <template v-if="image">
+                <img :src="file.thumbnail" alt="图片"/>
+                <svg class="icon video-play-icon" aria-hidden="true" v-if="isVideo">
+                    <use xlink:href="#py_play"></use>
+                </svg>
+            </template>
             <file-icon v-else :file="file"/>
-            <!--<svg class="icon file-icon" aria-hidden="true" v-else>
-                <use :xlink:href="'#'+icon"></use>
-            </svg>-->
             <div class="state-icon-container" v-if="isNormal===false">
                 <div v-if="isUploading">
                     <svg class="icon state-icon" aria-hidden="true">
@@ -54,6 +56,9 @@
       isUploadFail() {
         return this.file.state === FileState.UploadFail
       },
+      isVideo() {
+        return this.file.type === FileType.Video
+      },
     },
     methods: {
       open() {
@@ -89,7 +94,9 @@
       },
       loadThumbnail() {
         this.image = null
-        if(this.file.state === FileState.Normal && this.file.type === FileType.Image && this.file.thumbnail) {
+        if(this.file.state === FileState.Normal &&
+          [FileType.Image, FileType.Video].indexOf(this.file.type) > -1 &&
+          this.file.thumbnail) {
           const img = new Image()
           img.src = this.file.thumbnail
           img.addEventListener('load', () => {this.image = this.file.thumbnail})
@@ -108,6 +115,15 @@
 </script>
 
 <style scoped lang="scss">
+    @keyframes play-icon-animation {
+        0% {
+            fill-opacity: 1;
+        }
+        100% {
+            fill-opacity: 0.5;
+        }
+    }
+
     .file {
         width: 100px;
         padding: 8px 0 0 0;
@@ -119,13 +135,15 @@
 
 
             .file-name {
-                .file-name__ellipsis {
-                }
-
                 .file-name__full {
                     position: absolute;
                     display: block;
+                    direction: ltr;
                 }
+            }
+
+            .video-play-icon {
+                animation: play-icon-animation .5s alternate infinite ease-in-out;
             }
         }
 
@@ -140,6 +158,19 @@
             img {
                 max-width: 80px;
                 height: 60px;
+            }
+
+            .video-play-icon {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+                margin: 0 auto;
+                width: 80px;
+                height: 60px;
+                fill-opacity: 1;
+                fill: white;
+                filter: drop-shadow(0px 0px 2px rgba(0, 0, 0, .7));
             }
 
             /*文件svg图标*/

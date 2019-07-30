@@ -13,7 +13,8 @@
 
         <!--正常文件-->
         <div class="folder">
-            <file-view v-for="(_file,i) in files" :key="i" :parent="file" :file="_file" :id="id" @dblclick="open"/>
+            <file-view v-for="(_file,i) in files" :key="i" :parent="file" :file="_file" :id="window.id"
+                       @dblclick="open"/>
         </div>
         <div v-if="nextPage" class="next-page">
             <el-button @click="loadNextPage" type="text" :loading="loading">加载更多</el-button>
@@ -26,7 +27,7 @@
                 <el-button type="text" @click="$store.state.settings=true">设置</el-button>
             </div>
             <div class="folder">
-                <file-view v-for="(item,i) in uploading" :key="i" :parent="file" :file="item.file" :id="id"/>
+                <file-view v-for="(item,i) in uploading" :key="i" :parent="file" :file="item.file" :id="window.id"/>
             </div>
         </div>
         <!--上传失败-->
@@ -35,7 +36,7 @@
                 <el-button type="text" @click="clearUploadFail">清空</el-button>
             </div>
             <div class="folder">
-                <file-view v-for="(item,i) in uploadFails" :key="i" :parent="file" :file="item.file" :id="id"/>
+                <file-view v-for="(item,i) in uploadFails" :key="i" :parent="file" :file="item.file" :id="window.id"/>
             </div>
         </div>
         <!--等待上传-->
@@ -44,7 +45,7 @@
                 <el-button type="text" @click="clearWaiting">全部取消</el-button>
             </div>
             <div class="folder">
-                <file-view v-for="(item,i) in waiting" :key="i" :parent="file" :file="item.file" :id="id"/>
+                <file-view v-for="(item,i) in waiting" :key="i" :parent="file" :file="item.file" :id="window.id"/>
             </div>
         </div>
         <input type="file" style="display: none" class="hidden-file-input" multiple ref="fileInput"
@@ -55,8 +56,8 @@
 <script>
   import WindowBaeContent from './window-base-content'
   import FileView from './file'
-  import { File, FileState, FileType } from '../js/file'
-  import { WindowEvent } from '../js/window'
+  import { defaultSort, File, FileSortType, FileState, FileType } from '../js/file'
+  import { Window, WindowEvent } from '../js/window'
   import { findIndex } from 'lodash'
   import { getFilesFromDataTransferItems } from 'datatransfer-files-promise'
   import { API } from '../../admin/preset'
@@ -67,30 +68,34 @@
     extends: WindowBaeContent,
     name: 'window-folder',
     components: { FileView },
-    props: ['id', 'user', 'file'],
+    props: { window: Window, file: File },
     data() {
       return {
         isDragEnter: false,
         files: [],
         nextPage: null,
+        search: '',
+        sort: JSON.parse(JSON.stringify(defaultSort)),
       }
     },
     watch: {
       file() {
         this.nextPage = null
         this.files.length = 0
+        this.search = ''
+        this.sort = JSON.parse(JSON.stringify(defaultSort))
         this.load()
       },
     },
     computed: {
       uploading() {
-        return this.$store.getters.getUploading(this.user, this.file.path)
+        return this.$store.getters.getUploading(this.window.user, this.file.path)
       },
       waiting() {
-        return this.$store.getters.getUploading(this.user, this.file.path, FileState.Waiting)
+        return this.$store.getters.getUploading(this.window.user, this.file.path, FileState.Waiting)
       },
       uploadFails() {
-        return this.$store.getters.getUploading(this.user, this.file.path, FileState.UploadFail)
+        return this.$store.getters.getUploading(this.window.user, this.file.path, FileState.UploadFail)
       },
       queueConcurrency: {
         get: function() {
@@ -145,10 +150,10 @@
           const index = findIndex(this.files, { path: data.path, name: data.name })
           if(index > -1) {
             this.$confirm(`${data.name} 已经存在，是否覆盖？`).then(() => {
-              this.$store.commit('uploadFile', { id: this.id, path: this.file.path, file })
+              this.$store.commit('uploadFile', { id: this.window.id, path: this.file.path, file })
             }).catch(() => {})
           }
-          this.$store.commit('uploadFile', { id: this.id, path: this.file.path, file })
+          this.$store.commit('uploadFile', { id: this.window.id, path: this.file.path, file })
         }
       },
       /**
@@ -171,10 +176,10 @@
           const index = findIndex(this.files, { path: file.path, name: file.name })
           if(index > -1) {
             this.$confirm(`${file.name} 已经存在，是否覆盖？`).then(() => {
-              this.$store.commit('uploadFile', { id: this.id, path: this.file.path, file })
+              this.$store.commit('uploadFile', { id: this.window.id, path: this.file.path, file })
             }).catch(() => {})
           } else
-            this.$store.commit('uploadFile', { id: this.id, path: this.file.path, file })
+            this.$store.commit('uploadFile', { id: this.window.id, path: this.file.path, file })
         })
       },
       open(file) {
@@ -188,12 +193,32 @@
           _path = ''
         else
           _path = `:${_path}:`
-        _path += '/children?expand=thumbnails'
+        if(this.search)
+          _path += `/search(q='${this.search}')?expand=thumbnails`
+        else
+          _path += '/children?expand=thumbnails'
+
+        let order = 'name'
+        switch(this.sort.type) {
+          case FileSortType.Name:
+            order = 'name'
+            break
+          case FileSortType.Size:
+            order = 'size'
+            break
+          case FileSortType.CreatedTime:
+            order = 'createdDateTime'
+            break
+          case FileSortType.ModifiedTime:
+            order = 'lastModifiedDateTime'
+        }
+        _path += '&orderby=' + order + ' ' + (this.sort.isUp ? 'desc' : 'asc')
+
         if(force)
           this.nextPage = null
 
         try {
-          const { data } = await this.$store.dispatch('load', { user: this.user, path: _path, force })
+          const { data } = await this.$store.dispatch('load', { user: this.window.user, path: _path, force })
           this.files = data.value.map(data => {
             const _path = path.join(this.file.path, this.file.name)
             const file = new File(data.name, _path).setFromData(data)
@@ -204,12 +229,14 @@
           else
             this.nextPage = null
         } catch(e) {
+          console.log('folder loadContent', e)
           this.$emit('loadError', e.response.data)
         }
       },
       async loadNextPage() {
         this.loading = true
-        const { data } = await this.$store.dispatch('load', { user: this.user, path: this.nextPage, force: true })
+        const { data } = await this.$store.dispatch('load',
+          { user: this.window.user, path: this.nextPage, force: true })
         this.files.push(...data.value.map(data => {
           const _path = path.join(this.file.path, this.file.name)
           const file = new File(data.name, _path)
@@ -251,7 +278,7 @@
         console.log('创建', type, name)
         if(type === FileType.Folder) {
           const _path = path.join(this.file.path, this.file.name) === '/' ? '/root' : '/items/' + this.file.id
-          this.$http.get(API.createFolder + '/' + this.user.id + '?path=' + _path + '&name=' + name).
+          this.$http.get(API.createFolder + '/' + this.window.user.id + '?path=' + _path + '&name=' + name).
             then(({ data }) => {
               this.files.push(
                 new File(name, path.join(this.file.path, name)).setFromData(data).
@@ -262,16 +289,28 @@
           this.$alert('尚未实现')
         }
       },
+      sortFile({ type, isUp }) {
+        console.log('排序', type, isUp)
+        this.sort.type = type
+        this.sort.isUp = isUp
+        this.load()
+      },
+      searchFile(word) {
+        this.search = word
+        this.load()
+      },
     },
     mounted() {
-      this.$store.state.windows[this.id].addEventListener(WindowEvent.FileUploaded, this.fileUploaded)
-      this.$store.state.windows[this.id].addEventListener(WindowEvent.FileDeleted, this.removeFile)
+      this.window.addEventListener(WindowEvent.FileUploaded, this.fileUploaded)
+      this.window.addEventListener(WindowEvent.FileDeleted, this.removeFile)
+      this.window.addEventListener(WindowEvent.SortFile, this.sortFile)
+      this.window.addEventListener(WindowEvent.SearchFile, this.searchFile)
     },
     beforeDestroy() {
-      if(this.$store.state.windows[this.id]) {
-        this.$store.state.windows[this.id].removeEventListener(WindowEvent.FileUploaded, this.fileUploaded)
-        this.$store.state.windows[this.id].removeEventListener(WindowEvent.FileDeleted, this.removeFile)
-      }
+      this.window.removeEventListener(WindowEvent.FileUploaded, this.fileUploaded)
+      this.window.removeEventListener(WindowEvent.FileDeleted, this.removeFile)
+      this.window.removeEventListener(WindowEvent.SortFile, this.sortFile)
+      this.window.removeEventListener(WindowEvent.SearchFile, this.searchFile)
     },
   }
 </script>

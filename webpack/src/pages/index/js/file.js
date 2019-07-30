@@ -21,6 +21,12 @@ export const FileState = Object.freeze({
   Deleting: Symbol('deleting'),//正在删除文件
   UploadFail: Symbol('uploadFail'),//上传失败
 })
+export const FileSortType = Object.freeze({
+  Name: Symbol('name'),
+  Size: Symbol('size'),
+  CreatedTime: Symbol('ctime'),
+  ModifiedTime: Symbol('mtime'),
+})
 
 // https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Complete_list_of_MIME_types
 
@@ -127,7 +133,7 @@ export class File {
     }
     this.id = data.id
     this.mimeType = get(data, 'file.mimeType')
-    if(data['parentReference'])
+    if(data['parentReference'] && data['parentReference']['path'])
       this.path = data['parentReference']['path'] === '/drive/root:'
         ? '/'
         : data['parentReference']['path'].replace('/drive/root:', '/')
@@ -139,3 +145,5 @@ export class File {
     return this
   }
 }
+
+export const defaultSort = { type: FileSortType.Name, isUp: false }

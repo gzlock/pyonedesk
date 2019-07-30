@@ -1,7 +1,7 @@
 <template>
-    <div class="window" :class="{active:$store.state.activeID === id,dragging,loading}" @focus="focus"
-         :style="{'z-index':z}"
-         :tabindex="z" @blur="blur">
+    <div class="window" :class="{active:$store.state.activeID === window.id,dragging,loading}" @focus="focus"
+         :style="{'z-index':window.z}"
+         :tabindex="window.z" @blur="blur">
         <div class="window--head">
             <div class="name"> {{current.name}}</div>
             <div class="controller" style="margin-right: 10px">
@@ -30,53 +30,32 @@
                 </el-breadcrumb-item>
             </el-breadcrumb>
 
-            <div class="controller" v-if="loading === false && showFolder">
-                <el-dropdown @command="create" size="mini" trigger="click">
-                  <span class="el-dropdown-link">
-                    创建<i class="el-icon-arrow-down el-icon--right"></i>
-                  </span>
-                    <el-dropdown-menu slot="dropdown">
-                        <el-dropdown-item command="folder">文件夹</el-dropdown-item>
-                        <el-dropdown-item divided></el-dropdown-item>
-                        <el-dropdown-item command="text">文本文件</el-dropdown-item>
-                    </el-dropdown-menu>
-                </el-dropdown>
-                <div @click="upload('file')">
-                    <svg class="icon" aria-hidden="true" :class="{disabled:loading}">
-                        <use xlink:href="#py_shangchuan1"></use>
-                    </svg>
-                    文件
-                </div>
-                <div @click="upload('folder')">
-                    <svg class="icon" aria-hidden="true" :class="{disabled:loading}">
-                        <use xlink:href="#py_shangchuan1"></use>
-                    </svg>
-                    文件夹
-                </div>
-            </div>
+            <window-folder-tool v-show="loading === false && showFolder"
+                                :window="window" :file="current" @upload="upload"/>
+
         </div>
         <div class="window--body" v-show="!dragging" :class="{loading:loading}">
             <window-loading v-if="loading"/>
             <window-error v-if="error" :error="error"/>
             <template v-show="!loading">
                 <template v-if="showFolder">
-                    <window-folder ref="content" :id="id" :user="user" :file="current" @open="open"
-                                   @loadFinish="loadFinish" @loadError="loadError"/>
+                    <window-folder ref="content" :window="window" :file="current" @open="open"
+                                   :loading.sync="loading" @loadError="loadError"/>
                 </template>
                 <template v-else-if="showEditor">
-                    <window-editor ref="content" :id="id" :user="user" :file="current" @loadFinish="loadFinish"
+                    <window-editor ref="content" :window="window" :file="current" :loading.sync="loading"
                                    @loadError="loadError"/>
                 </template>
                 <template v-else-if="showViewer">
-                    <window-viewer ref="content" :id="id" :user="user" :file="current" @loadFinish="loadFinish"
+                    <window-viewer ref="content" :window="window" :file="current" :loading.sync="loading"
                                    @loadError="loadError"/>
                 </template>
                 <template v-else-if="showPlayer">
-                    <window-player ref="content" :id="id" :user="user" :file="current" @loadFinish="loadFinish"
+                    <window-player ref="content" :window="window" :file="current" :loading.sync="loading"
                                    @loadError="loadError"/>
                 </template>
                 <template v-else>
-                    <window-binary-file ref="content" :id="id" :user="user" :file="current" @loadFinish="loadFinish"
+                    <window-binary-file ref="content" :window="window" :file="current" :loading.sync="loading"
                                         @loadError="loadError"/>
                 </template>
             </template>
@@ -85,8 +64,8 @@
 </template>
 
 <script>
-  import { File, FileType } from '../js/file'
-  import { User } from '../js/user'
+  import { FileType } from '../js/file'
+  import { Window } from '../js/window'
   import WindowEditor from './window-editor'
   import WindowViewer from './window-viewer'
   import WindowPlayer from './window-player'
@@ -94,9 +73,11 @@
   import WindowLoading from './window-loading'
   import WindowError from './window-error'
   import WindowBinaryFile from './window-binary-file'
+  import WindowFolderTool from './window-folder-tool'
 
   export default {
     components: {
+      WindowFolderTool,
       WindowBinaryFile,
       WindowError,
       WindowLoading,
@@ -105,7 +86,7 @@
       WindowViewer,
       WindowEditor,
     },
-    props: { id: String, user: User, file: File, z: Number },
+    props: { window: Window },
     data() {
       return {
         loading: true,
@@ -123,17 +104,14 @@
           this.$refs['content'].click_upload(type)
       },
       close() {
-        this.$store.commit('closeWindow', this.id)
+        this.$store.commit('closeWindow', this.window.id)
       },
       focus() {
-        if(this.$store.state.activeID !== this.id)
-          this.$store.commit('windowSetTop', this.id)
+        if(this.$store.state.activeID !== this.window.id)
+          this.$store.commit('windowSetTop', this.window.id)
       },
       blur() {
         // console.log('blur', this.id)
-      },
-      loadFinish() {
-        this.loading = false
       },
       loadError(error) {
         this.error = error
@@ -166,17 +144,6 @@
       append(file) {
         this.history.push(file)
       },
-      create(command) {
-        if(command === 'folder') {
-          this.$prompt('输入文件夹名称', '创建文件夹').then(({ value }) => {
-            this.$refs['content'].create(FileType.Folder, value)
-          }).catch(() => {})
-        } else if(command === 'text') {
-          this.$prompt('输入文本文件名称', '创建文本文件').then(({ value }) => {
-            this.$refs['content'].create(FileType.Text, value)
-          }).catch(() => {})
-        }
-      },
     },
     computed: {
       current() {
@@ -197,13 +164,13 @@
       path() {
         return this.history.slice(0, this.historyIndex + 1).map((file, i) => {
           if(i === 0)
-            return this.user.name
+            return this.window.user.name
           return file.name
         })
       },
     },
     async beforeMount() {
-      this.append(this.file)
+      this.append(this.window.file)
       await this.load()
     },
     watch: {},
@@ -222,8 +189,8 @@
           this.dragging = false
         },
       }).resizable({
-        minHeight: 150,
-        minWidth: 200,
+        minHeight: 200,
+        minWidth: 400,
         start: () => {
           this.dragging = true
         },
@@ -235,9 +202,13 @@
   }
 </script>
 
-
+<style lang="scss">
+    .path > .el-breadcrumb__item > .el-breadcrumb__separator {
+        margin: 0 3px !important;
+    }
+</style>
 <style scoped lang="scss">
-    @import '@/assets/global.scss';
+    @import '../../../assets/global.scss';
 
     .window {
         outline: none;
@@ -248,8 +219,8 @@
         flex-direction: column;
         width: 400px;
         height: 200px;
-        min-width: 200px;
-        min-height: 150px;
+        min-width: 400px;
+        min-height: 200px;
 
         &.active {
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
@@ -314,35 +285,6 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
-            }
-
-            .controller {
-                display: flex;
-                color: black;
-                height: 100%;
-
-                div {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    cursor: pointer;
-                    padding: 0 5px;
-                    height: 100%;
-
-                    & + div {
-                        margin-left: 10px;
-                    }
-
-                    &:hover {
-                        background: #D3DCE6;
-                    }
-                }
-
-                svg.icon {
-                    width: 14px;
-                    height: 14px;
-                    margin-right: 5px;
-                }
             }
         }
 

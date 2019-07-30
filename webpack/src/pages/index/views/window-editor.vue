@@ -10,11 +10,13 @@
 <script>
   import WindowBaeContent from './window-base-content'
   import { join } from 'path'
+  import { Window } from '../js/window'
+  import { File } from '../js/file'
 
   export default {
     extends: WindowBaeContent,
     name: 'window-editor',
-    props: ['id', 'user', 'file'],
+    props: { window: Window, file: File },
     data() {
       return {
         $cm: null,
@@ -24,7 +26,7 @@
     methods: {
       async loadContent(force = false) {
         const path = ':' + join(this.file.path, this.file.name)
-        const { data: msData } = await this.$store.dispatch('load', { force, user: this.user, path })
+        const { data: msData } = await this.$store.dispatch('load', { force, user: this.window.user, path })
         // console.log('读取文本OD数据', msData)
         const { data: txtData } = await this.$http.get(msData['@microsoft.graph.downloadUrl'])
         // console.log('读取文本', txtData)
@@ -50,7 +52,7 @@
        * 删除这个文件的缓存
        */
       deleteCache() {
-        this.$store.commit('deleteCache', { user: this.user, path: ':' + this.file.path })
+        this.$store.commit('deleteCache', { user: this.window.user, path: ':' + this.file.path })
       },
       save() {
         if(this.loading || this.saving)
@@ -59,7 +61,7 @@
         this.saving = true
         this.$http({
           method: 'post',
-          url: '/admin/api/upload/' + this.user.id,
+          url: '/admin/api/upload/' + this.window.user.id,
           params: { path: join(this.file.path, this.file.name), type: 'text' },
           data: this.$cm.getValue(),
         }).then(() => {

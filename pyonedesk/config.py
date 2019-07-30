@@ -8,7 +8,7 @@ stylizes = {
     # svg矢量图标
     'icon': {
         # iconfont.cn->我的项目->Symbol->js文件链接，这是兜底用的，不要修改
-        'src': '//at.alicdn.com/t/font_1295827_vv9pgi7w6r.js',
+        'src': '//at.alicdn.com/t/font_1295827_bqjbq6h67tj.js',
         # 对应的是图标id
         'icons': {
             'default': 'py_white',

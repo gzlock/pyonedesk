@@ -19,12 +19,13 @@
   import WindowBaseContent from './window-base-content'
   import { join } from 'path'
   import FileIcon from './file-icon'
+  import { Window } from '../js/window'
+  import { File } from '../js/file'
 
   export default {
     name: 'window-binary-file',
     components: { FileIcon },
-    extends: WindowBaseContent,
-    props: ['id', 'user', 'file'],
+    extends: WindowBaseContent, props: { window: Window, file: File },
     data() {
       return {
         info: {

@@ -1,5 +1,4 @@
-# OneDrive网盘的Python轮子
-##### 可能会比现有的轮子要新要圆？
+# PyOneDesk for OneDrive
 
 配套
 - 纯 api 服务器
