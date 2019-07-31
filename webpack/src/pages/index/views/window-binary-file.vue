@@ -1,9 +1,9 @@
 <template>
     <div class="file-container">
-        <file-icon :file="file"/>
+        <file-icon :type="info.type"/>
         <el-form label-width="80px">
             <el-form-item label="文件名">{{file.name}}</el-form-item>
-            <el-form-item label="大小">{{info.size}}</el-form-item>
+            <el-form-item label="大小">{{bytesToSize(info.size)}}</el-form-item>
             <el-form-item label="创建时间">{{info.createdTime}}</el-form-item>
             <el-form-item label="修改时间">{{info.modifiedTime}}</el-form-item>
             <el-form-item>
@@ -20,15 +20,19 @@
   import { join } from 'path'
   import FileIcon from './file-icon'
   import { Window } from '../js/window'
-  import { File } from '../js/file'
+  import { File, GetFileType } from '../js/file'
+  import { get } from 'lodash'
+  import { bytesToSize } from '../../../js/utils'
 
   export default {
     name: 'window-binary-file',
     components: { FileIcon },
-    extends: WindowBaseContent, props: { window: Window, file: File },
+    extends: WindowBaseContent,
+    props: { window: Window, file: File },
     data() {
       return {
         info: {
+          type: null,
           size: 0,
           createdTime: '',
           modifiedTime: '',
@@ -39,14 +43,17 @@
     methods: {
       async loadContent(force = false) {
         const path = ':' + join(this.file.path, this.file.name)
-        const { data } = await this.$store.dispatch('load', { user: this.user, path: path, force })
+        const { data } = await this.$store.dispatch('load', { user: this.window.user, path: path, force })
         console.log('文件', data)
         this.$emit('loadFinish')
         this.info.size = data.size
         this.info.url = data['@microsoft.graph.downloadUrl']
         this.info.createdTime = moment(new Date(data['createdDateTime'])).format('llll')
         this.info.modifiedTime = moment(new Date(data['lastModifiedDateTime'])).format('llll')
+
+        this.info.type = GetFileType(data['name'], get(data, 'file.mimeType'))
       },
+      bytesToSize: bytesToSize,
     },
   }
 </script>

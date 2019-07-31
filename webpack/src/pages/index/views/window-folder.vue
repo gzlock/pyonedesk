@@ -74,7 +74,6 @@
         isDragEnter: false,
         files: [],
         nextPage: null,
-        search: '',
         sort: JSON.parse(JSON.stringify(defaultSort)),
       }
     },
@@ -82,7 +81,6 @@
       file() {
         this.nextPage = null
         this.files.length = 0
-        this.search = ''
         this.sort = JSON.parse(JSON.stringify(defaultSort))
         this.load()
       },
@@ -193,9 +191,12 @@
           _path = ''
         else
           _path = `:${_path}:`
-        if(this.search)
-          _path += `/search(q='${this.search}')?expand=thumbnails`
-        else
+        const search = this.file.search
+        if(search) {
+          //搜索强制不使用缓存
+          force = true
+          _path += `/search(q='${search}')?expand=thumbnails`
+        } else
           _path += '/children?expand=thumbnails'
 
         let order = 'name'
@@ -221,8 +222,7 @@
           const { data } = await this.$store.dispatch('load', { user: this.window.user, path: _path, force })
           this.files = data.value.map(data => {
             const _path = path.join(this.file.path, this.file.name)
-            const file = new File(data.name, _path).setFromData(data)
-            return file.setFromData(data).setType().setState(FileState.Normal)
+            return new File(data.name, _path).setFromData(data).setType().setState(FileState.Normal)
           })
           if(data['@odata.nextLink'])
             this.nextPage = data['@odata.nextLink'].split('/root')[1]
@@ -274,7 +274,7 @@
           this.$store.commit('clearUploadingFile', FileState.UploadFail)
         }).catch(() => {})
       },
-      create(type, name) {
+      create({ type, name }) {
         console.log('创建', type, name)
         if(type === FileType.Folder) {
           const _path = path.join(this.file.path, this.file.name) === '/' ? '/root' : '/items/' + this.file.id
@@ -295,22 +295,18 @@
         this.sort.isUp = isUp
         this.load()
       },
-      searchFile(word) {
-        this.search = word
-        this.load()
-      },
     },
     mounted() {
       this.window.addEventListener(WindowEvent.FileUploaded, this.fileUploaded)
       this.window.addEventListener(WindowEvent.FileDeleted, this.removeFile)
       this.window.addEventListener(WindowEvent.SortFile, this.sortFile)
-      this.window.addEventListener(WindowEvent.SearchFile, this.searchFile)
+      this.window.addEventListener(WindowEvent.CreateFile, this.create)
     },
     beforeDestroy() {
       this.window.removeEventListener(WindowEvent.FileUploaded, this.fileUploaded)
       this.window.removeEventListener(WindowEvent.FileDeleted, this.removeFile)
       this.window.removeEventListener(WindowEvent.SortFile, this.sortFile)
-      this.window.removeEventListener(WindowEvent.SearchFile, this.searchFile)
+      this.window.removeEventListener(WindowEvent.CreateFile, this.create)
     },
   }
 </script>

@@ -72,11 +72,11 @@
       create(command) {
         if(command === 'folder') {
           this.$prompt('输入文件夹名称', '创建文件夹').then(({ value }) => {
-            this.$refs['content'].create(FileType.Folder, value)
+            this.window.trigger(WindowEvent.CreateFile, { name: value, type: FileType.Folder })
           }).catch(() => {})
         } else if(command === 'text') {
           this.$prompt('输入文本文件名称', '创建文本文件').then(({ value }) => {
-            this.$refs['content'].create(FileType.Text, value)
+            this.window.trigger(WindowEvent.CreateFile, { name: value, type: FileType.Text })
           }).catch(() => {})
         }
       },

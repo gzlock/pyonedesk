@@ -8,7 +8,7 @@
                     <use xlink:href="#py_play"></use>
                 </svg>
             </template>
-            <file-icon v-else :file="file"/>
+            <file-icon v-else :type="file.type"/>
             <div class="state-icon-container" v-if="isNormal===false">
                 <div v-if="isUploading">
                     <svg class="icon state-icon" aria-hidden="true">

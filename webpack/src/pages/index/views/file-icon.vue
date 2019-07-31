@@ -9,10 +9,10 @@
 
   export default {
     name: 'file-icon',
-    props: ['file'],
+    props: ['type'],
     computed: {
       icon() {
-        switch(this.file.type) {
+        switch(this.type) {
           case FileType.Folder:
             return Icons['folder']
           case FileType.Audio:

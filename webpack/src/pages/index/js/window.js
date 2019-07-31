@@ -3,6 +3,8 @@ export const WindowEvent = Object.freeze({
   FileDeleted: Symbol('deleted'),
   SortFile: Symbol('sort'),
   SearchFile: Symbol('search'), // 参数 {type:FileSortType,isUp:bool}
+  OpenFile: Symbol('open'),// 查看文件属性事件 {file:File}
+  CreateFile: Symbol('CreateFile'),// 创建文件 {name:String,type:FileType}
 })
 
 export class Window {

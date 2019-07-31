@@ -98,30 +98,7 @@ export class File {
     if(type) {
       this.type = type
     } else {
-      if(!this.mimeType)
-        this.type = FileType.Folder
-      else if(this.mimeType.indexOf('image/') !== -1)
-        this.type = FileType.Image
-      else if(this.mimeType.indexOf('audio/') !== -1)
-        this.type = FileType.Audio
-      else if(this.mimeType.indexOf('video/') !== -1)
-        this.type = FileType.Video
-      else if(fileNameToType(this.name, codeFormats))
-        this.type = FileType.Code
-      else if(wordMimeType.indexOf(this.mimeType) !== -1)
-        this.type = FileType.Word
-      else if(excelMimeType.indexOf(this.mimeType) !== -1)
-        this.type = FileType.Excel
-      else if(pptMimeType.indexOf(this.mimeType) !== -1)
-        this.type = FileType.PPT
-      else if(zipMimeType.indexOf(this.mimeType) !== -1)
-        this.type = FileType.Zip
-      else if(this.mimeType === 'text/plain')
-        this.type = FileType.Text
-      else if(this.mimeType === 'application/pdf')
-        this.type = FileType.PDF
-      else
-        this.type = FileType.Normal
+      this.type = GetFileType(this.name, this.mimeType)
     }
     return this
   }
@@ -133,10 +110,10 @@ export class File {
     }
     this.id = data.id
     this.mimeType = get(data, 'file.mimeType')
-    if(data['parentReference'] && data['parentReference']['path'])
-      this.path = data['parentReference']['path'] === '/drive/root:'
-        ? '/'
-        : data['parentReference']['path'].replace('/drive/root:', '/')
+    const path = get(data,'parentReference.path')
+    if(path)
+      this.path = path === '/drive/root:'? '/':
+        path.replace('/drive/root:', '/')
     return this
   }
 
@@ -144,6 +121,45 @@ export class File {
     this.state = state
     return this
   }
+
+  clone() {
+    return new File(this.name, this.path, this.mimeType)
+  }
 }
 
 export const defaultSort = { type: FileSortType.Name, isUp: false }
+
+/**
+ *
+ * @param fileName
+ * @param mimeType
+ * @returns {FileType}
+ */
+export function GetFileType(fileName, mimeType) {
+  let type
+  if(!mimeType)
+    type = FileType.Folder
+  else if(mimeType.indexOf('image/') !== -1)
+    type = FileType.Image
+  else if(mimeType.indexOf('audio/') !== -1)
+    type = FileType.Audio
+  else if(mimeType.indexOf('video/') !== -1)
+    type = FileType.Video
+  else if(fileNameToType(fileName, codeFormats))
+    type = FileType.Code
+  else if(wordMimeType.indexOf(mimeType) !== -1)
+    type = FileType.Word
+  else if(excelMimeType.indexOf(mimeType) !== -1)
+    type = FileType.Excel
+  else if(pptMimeType.indexOf(mimeType) !== -1)
+    type = FileType.PPT
+  else if(zipMimeType.indexOf(mimeType) !== -1)
+    type = FileType.Zip
+  else if(mimeType === 'text/plain')
+    type = FileType.Text
+  else if(mimeType === 'application/pdf')
+    type = FileType.PDF
+  else
+    type = FileType.Normal
+  return type
+}

@@ -32,37 +32,47 @@
     },
     watch: {
       file() {
+        const file = this.file
         const win = this.$store.state.windows[this.id], user = win.user
         this.list.length = 0
-        if(this.file.state === FileState.Normal) {
+        if(file.state === FileState.Normal) {
           if([FileType.Folder, FileType.Text, FileType.Code, FileType.Image, FileType.Video, FileType.Audio].indexOf(
             this.file.type) > -1) {
             this.list.push({
               name: '新窗口打开',
-              click: () => {this.$store.commit('createWindowFromMenu', { file: this.file })},
+              click: () => {this.$store.commit('createWindowFromMenu', { file })},
             })
           }
           if(this.file.type !== FileType.Folder) {
             this.list.push({
               name: '下载文件',
               click: () => {
-                window.open(`/download/${user.id}?path=:${join(this.file.path, this.file.name)}`)
+                window.open(`/download/${user.id}?path=:${join(file.path, file.name)}`)
               },
             })
           }
 
           this.list.push({
+            name: '文件属性',
+            click: async() => {
+              const binaryFile = file.clone()
+              binaryFile.type = FileType.Normal
+              win.trigger(WindowEvent.OpenFile, binaryFile)
+            },
+          })
+
+          this.list.push({
             name: '删除文件',
             click: async() => {
-              this.$confirm(`确认删除文件 ${this.file.name} ?`).then(() => {
+              this.$confirm(`确认删除文件 ${file.name} ?`).then(() => {
                 this.$http(
-                  { method: 'delete', url: `/admin/api/${user.id}?path=${join(this.file.path, this.file.name)}` }).
+                  { method: 'delete', url: `/admin/api/${user.id}?path=${join(file.path, file.name)}` }).
                   then(() => {
-                    this.$notify.success(`成功删除 ${this.file.name}`)
-                    win.trigger(WindowEvent.FileDeleted, this.file)
+                    this.$notify.success(`成功删除 ${file.name}`)
+                    win.trigger(WindowEvent.FileDeleted, file)
                   }).
                   catch(err => {
-                    this.$notify.error(`${this.file.name} 删除失败：${err.response.data}`)
+                    this.$notify.error(`${file.name} 删除失败：${err.response.data}`)
                   })
               }).catch(() => {})
             },

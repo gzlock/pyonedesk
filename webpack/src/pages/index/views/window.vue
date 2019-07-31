@@ -65,7 +65,7 @@
 
 <script>
   import { FileType } from '../js/file'
-  import { Window } from '../js/window'
+  import { Window, WindowEvent } from '../js/window'
   import WindowEditor from './window-editor'
   import WindowViewer from './window-viewer'
   import WindowPlayer from './window-player'
@@ -165,7 +165,7 @@
         return this.history.slice(0, this.historyIndex + 1).map((file, i) => {
           if(i === 0)
             return this.window.user.name
-          return file.name
+          return file.search ? '搜索：' + file.search : file.name
         })
       },
     },
@@ -197,6 +197,13 @@
         stop: () => {
           this.dragging = false
         },
+      })
+      this.window.addEventListener(WindowEvent.OpenFile, this.open)
+      this.window.addEventListener(WindowEvent.SearchFile, search => {
+        const folder = this.current.clone()
+        folder.type = this.current.type
+        folder.search = search
+        this.open(folder)
       })
     },
   }

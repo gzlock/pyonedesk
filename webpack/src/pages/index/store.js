@@ -242,7 +242,7 @@ const $store = new Vuex.Store({
         return context.state.cache[url]
       }
       const res = await axios.get(url)
-      if(res.status === 200)
+      if(res.status === 200 && force === false)
         context.commit('setCache', { url, res })
       return res
     },
