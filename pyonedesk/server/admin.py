@@ -3,7 +3,6 @@
 import copy
 import json
 import os
-import random
 
 import requests
 from diskcache import Cache
@@ -15,7 +14,7 @@ from shortuuid import ShortUUID
 from pyonedesk.config import stylizes as default_stylizes
 from pyonedesk.utils import upload
 from .account import Account, make_header
-from .utils import sha256, aes_decrypt, aes_encrypt, createAppUrl, getCodeUrl
+from .utils import sha256, createAppUrl, getCodeUrl
 
 admin = Blueprint('admin', url_prefix='/admin')
 admin_api = Blueprint('admin_api', url_prefix='/admin/api')
@@ -29,22 +28,23 @@ __iv = 'This is an IV456'
 uuid = ShortUUID()
 
 
-def __checkToken(request) -> bool:
+def __check_token(request) -> bool:
     """
     检查cookies['token']
     :param request:
     :return:
     """
-    config = request.app.cache.get('config')
     token = request.cookies.get('token')
+    cache: Cache = request.app.cache
+
     if token is None:
         return False
+    # todo 测试
+    test = cache.get(token, default=False)
+    print('cookie token', test)
 
-    try:
-        token = json.loads(aes_decrypt(config['aes_key'], token))
-    except:
-        return False
-    return token['password'] == config['password']
+    # 如果token存在，则延长1个小时的有效期
+    return cache.touch(token, expire=3600)
 
 
 @admin.get('/login')
@@ -54,7 +54,7 @@ async def admin_login_page(request):
     :param request:
     :return:
     """
-    if __checkToken(request):
+    if __check_token(request):
         return response.redirect(admin.url_prefix)
 
     return await response.file(os.path.join(res_dir, 'admin_login.html'))
@@ -63,7 +63,7 @@ async def admin_login_page(request):
 @admin.get('/')
 async def admin_index_page(request):
     """后台首页"""
-    if __checkToken(request):
+    if __check_token(request):
         return await response.file(os.path.join(res_dir, 'admin.html'))
     return response.redirect(admin.url_prefix + '/login')
 
@@ -76,7 +76,7 @@ async def login_action(request):
     :return:
     """
     code = {'code': 0}
-    if __checkToken(request):
+    if __check_token(request):
         code['code'] = 1
         return response.json(code)
 
@@ -86,16 +86,14 @@ async def login_action(request):
         raise ServerError('缺少密码')
     password = sha256(password)
     print('登录', config['password'], password)
-    print('登录', config['aes_key'])
 
     if config['password'] != password:
         return response.json({'code': 0})
     data = response.json({'code': 1})
 
-    json_str = json.dumps({'password': password, 'r': random.random()})
-
-    token = aes_encrypt(config['aes_key'], json_str)
-    # print('token', type(token), token)
+    token = uuid.random(length=32)
+    # 已登陆
+    request.app.cache.set(token, True)
     data.cookies['token'] = token
     data.cookies['token']['httponly'] = True
     return data
@@ -105,12 +103,14 @@ async def login_action(request):
 async def check_token(request):
     path: str = request.path
     # method: str = request.method.lower()
-    if __checkToken(request) is False:
+    print('middleware check_token', request.path)
+
+    if path.startswith('/admin') and __check_token(request) is False:
         res = None
-        if path == '/admin':
-            res = response.redirect(admin.url_prefix + '/login')
-        elif path.startswith(admin_api.url_prefix):
+        if path.startswith(admin_api.url_prefix):
             res = response.text('没有管理权限', status=403)
+        elif path == admin.url_prefix:
+            res = response.redirect(admin.url_prefix + '/login')
         if res is not None:
             del res.cookies['token']
             return res

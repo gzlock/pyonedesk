@@ -54,8 +54,6 @@ setup(
         'requests',
         'sanic',
         'diskcache',
-        'progress',
-        'pycryptodome',
         'shortuuid',
         'appdirs',
     ],

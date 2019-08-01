@@ -1,10 +1,6 @@
 # coding:utf-8
 
 import hashlib
-from base64 import b64encode, b64decode
-
-from Crypto.Cipher import AES
-from Crypto.Util import Padding
 
 from pyonedesk.server import get_code_url
 from .account import Account
@@ -12,20 +8,6 @@ from .account import Account
 
 def sha256(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
-
-
-def aes_encrypt(key: bytes, text: str) -> str:
-    iv = key[8:AES.block_size + 8]
-    aes = AES.new(key, AES.MODE_CBC, iv)
-    text = Padding.pad(text.encode('utf-8'), AES.block_size)
-    return b64encode(aes.encrypt(text)).decode('utf-8')
-
-
-def aes_decrypt(key: bytes, text: str) -> str:
-    text = b64decode(text.encode('utf-8'))
-    iv = key[8:AES.block_size + 8]
-    aes = AES.new(key, AES.MODE_CBC, iv)
-    return Padding.unpad(aes.decrypt(text), AES.block_size).decode('utf-8')
 
 
 def redirectUrl(request, id: str) -> str:
