@@ -1,5 +1,7 @@
 # PyOneDesk for OneDrive
 
+![截图](./截图.gif)
+
 配套
 - 纯 api 服务器
 - CLI 命令行式程序
