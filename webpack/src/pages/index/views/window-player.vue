@@ -1,5 +1,6 @@
 <template>
     <div class="player">
+        <video ref="video"></video>
     </div>
 </template>
 
@@ -22,9 +23,9 @@
         const path = ':' + join(this.file.path, this.file.name)
         const { data } = await this.$store.dispatch('load', { user: this.window.user, path, force })
         console.log('player', path, data)
-        new DPlayer({
-          container: this.$el,
-          video: { url: data['@microsoft.graph.downloadUrl'] },
+        new danplayer.Player(this.$refs['video'], {
+          danmakuForm: false,
+          src: data['@microsoft.graph.downloadUrl'] ,
         })
       },
     },
